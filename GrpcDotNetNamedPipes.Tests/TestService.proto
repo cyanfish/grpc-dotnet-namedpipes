@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package GrpcDotNetNamedPipes.Tests.Generated;
+
+service TestService {
+    rpc SimpleUnary (RequestMessage) returns (ResponseMessage) {}
+    rpc DelayedUnary (RequestMessage) returns (ResponseMessage) {}
+    rpc ThrowingUnary (RequestMessage) returns (ResponseMessage) {}
+    rpc DelayedThrowingUnary (RequestMessage) returns (ResponseMessage) {}
+    rpc ClientStreaming (stream RequestMessage) returns (ResponseMessage) {}
+    rpc ServerStreaming (RequestMessage) returns (stream ResponseMessage) {}
+    rpc DelayedServerStreaming (RequestMessage) returns (stream ResponseMessage) {}
+    rpc DuplexStreaming (stream RequestMessage) returns (stream ResponseMessage) {}
+    rpc DelayedDuplexStreaming (stream RequestMessage) returns (stream ResponseMessage) {}
+    rpc HeadersTrailers (RequestMessage) returns (ResponseMessage) {}
+    rpc SetStatus (RequestMessage) returns (ResponseMessage) {}
+}
+
+message RequestMessage {
+    int32 value = 1;
+    bytes binary = 2;
+}
+
+message ResponseMessage {
+    int32 value = 1;
+    bytes binary = 2;
+}

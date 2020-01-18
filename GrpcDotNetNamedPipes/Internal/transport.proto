@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package GrpcDotNetNamedPipes.Generated;
+
+message TransportMessage {
+    oneof data {
+        RequestInit request_init = 1;
+        Headers headers = 2;
+        PayloadInfo payload_info = 3;
+        RequestControl request_control = 4;
+        Trailers trailers = 5;
+    }
+}
+
+enum RequestControl {
+    none = 0;
+    cancel = 1;
+    stream_end = 2;
+}
+
+message RequestInit {
+    string methodFullName = 1;
+    google.protobuf.Timestamp deadline = 2;
+}
+
+message Headers {
+    repeated MetadataEntry metadata = 1;
+}
+
+message Trailers {
+    repeated MetadataEntry metadata = 1;
+    int32 status_code = 2;
+    string status_detail = 3;
+}
+
+message PayloadInfo {
+    int32 size = 1;
+    // For small packets, the payload bytes immediately follow the TransportMessage proto in the same packet.
+    // For large packets, the payload bytes are in a separate packet to avoid extra copying.
+    bool in_same_packet = 2;
+}
+
+message MetadataEntry {
+    string name = 1;
+    oneof value {
+        string valueString = 2;
+        bytes valueBytes = 3;
+    }
+}

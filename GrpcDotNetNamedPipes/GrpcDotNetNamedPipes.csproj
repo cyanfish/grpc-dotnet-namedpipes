@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net46;netcoreapp2.1</TargetFrameworks>
+        <LangVersion>8</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Google.Protobuf" Version="3.11.2" />
+      <PackageReference Include="Grpc.Core.Api" Version="2.26.0" />
+      <PackageReference Include="Grpc.Tools" Version="2.26.0" PrivateAssets="All" />
+      <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Protobuf Include="**/*.proto" Access="Internal" />
+    </ItemGroup>
+
+</Project>

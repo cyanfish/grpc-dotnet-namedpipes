@@ -1,0 +1,44 @@
+# GrpcDotNetNamedPipes
+
+**Experimental. This is not an official Google product. No compatibility guarantees are made between versions.**
+
+.NET implementation of a Windows named pipe transport for [gRPC](https://grpc.io/).
+
+## Supported platforms
+
+- .NET Framework 4.6+ (Windows)
+- .NET Core 2.1+ (Windows)
+
+## Usage
+
+Suppose you have a Greeter service as described in the [gRPC on .NET Core](https://docs.microsoft.com/en-us/aspnet/core/grpc/) intro.
+
+Server:
+```
+var server = new NamedPipeServer("MY_PIPE_NAME");
+Greeter.BindService(server.ServiceBinder, new GreeterService());
+server.Start();
+```
+
+Client:
+```
+var channel = new NamedPipeChannel(".", "MY_PIPE_NAME");
+var client = new Greeter.GreeterClient(channel);
+
+var response = await client.SayHello(
+	new HelloRequest { Name = "World" });
+
+Console.WriteLine(response.Message);
+```
+
+## Why named pipes?
+
+Named pipes are suitable for inter-process communication (IPC).
+
+Compared with gRPC over HTTP (using [grpc](https://github.com/grpc/grpc) or [grpc-dotnet](https://github.com/grpc/grpc-dotnet)), you get:
+- Better access controls (e.g. current user only)
+- Lightweight pure .NET library (instead of 3MB+ native DLL or ASP.NET Core dependency)
+- Much faster startup time
+- 2x-3x faster large message throughput
+- No firewall warnings
+- No network adapter required
