@@ -1,8 +1,8 @@
 # GrpcDotNetNamedPipes
 
-**Experimental. This is not an official Google product. No compatibility guarantees are made between versions.**
+Windows named pipe transport for [gRPC](https://grpc.io/) in C#/.NET.
 
-.NET implementation of a Windows named pipe transport for [gRPC](https://grpc.io/).
+**This is not an official Google product.**
 
 ## Supported platforms
 
@@ -42,3 +42,8 @@ Compared with gRPC over HTTP (using [grpc](https://github.com/grpc/grpc) or [grp
 - 2x-3x faster large message throughput
 - No firewall warnings
 - No network adapter required
+
+## Caveats
+
+This implementation currently uses a custom wire protocol so it won't be compatible with other gRPC named pipe implementations.
+
