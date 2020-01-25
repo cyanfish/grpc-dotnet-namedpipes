@@ -1,5 +1,7 @@
 # GrpcDotNetNamedPipes
 
+[![NuGet](https://img.shields.io/nuget/v/GrpcDotNetNamedPipes)](https://www.nuget.org/packages/GrpcDotNetNamedPipes/)
+
 Windows named pipe transport for [gRPC](https://grpc.io/) in C#/.NET.
 
 **This is not an official Google product.**
