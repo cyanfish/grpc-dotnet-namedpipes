@@ -24,6 +24,8 @@ namespace GrpcDotNetNamedPipes.Internal
     internal class ServerStreamPool : IDisposable
     {
         private const int PoolSize = 4;
+        private const int FallbackMin = 100;
+        private const int FallbackMax = 10_000;
 
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private readonly string _pipeName;
@@ -85,43 +87,53 @@ namespace GrpcDotNetNamedPipes.Internal
 
         private void StartListenThread()
         {
-            var thread = new Thread(ListenForConnection);
+            var thread = new Thread(ConnectionLoop);
             thread.Start();
+        }
+
+        private void ConnectionLoop()
+        {
+            int fallback = FallbackMin;
+            while (true)
+            {
+                try
+                {
+                    ListenForConnection();
+                    fallback = FallbackMin;
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception)
+                {
+                    // TODO: Log
+                    Thread.Sleep(fallback);
+                    fallback = Math.Min(fallback * 2, FallbackMax);
+                }
+            }
         }
 
         private void ListenForConnection()
         {
-            try
+            var pipeServer = CreatePipeServer();
+            pipeServer.WaitForConnectionAsync(_cts.Token).Wait();
+            Task.Run(() =>
             {
-                while (true)
+                try
                 {
-                    var pipeServer = CreatePipeServer();
-                    pipeServer.WaitForConnectionAsync(_cts.Token).Wait();
-                    Task.Run(() =>
-                    {
-                        try
-                        {
-                            _handleConnection(pipeServer).Wait();
-                            pipeServer.Disconnect();
-                        }
-                        catch (Exception)
-                        {
-                            // TODO: Log
-                        }
-                        finally
-                        {
-                            pipeServer.Dispose();
-                        }
-                    });
+                    _handleConnection(pipeServer).Wait();
+                    pipeServer.Disconnect();
                 }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception)
-            {
-                // TODO: Log
-            }
+                catch (Exception)
+                {
+                    // TODO: Log
+                }
+                finally
+                {
+                    pipeServer.Dispose();
+                }
+            });
         }
 
         public void Dispose()
