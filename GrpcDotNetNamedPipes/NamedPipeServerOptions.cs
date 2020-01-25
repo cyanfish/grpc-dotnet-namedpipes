@@ -20,7 +20,7 @@ namespace GrpcDotNetNamedPipes
 {
     public class NamedPipeServerOptions
     {
-#if NETCOREAPP
+#if NETCOREAPP || NETSTANDARD2_1
         /// <summary>
         /// Gets or sets a value indicating whether the server pipe can only be connected to a client created by the
         /// same user.

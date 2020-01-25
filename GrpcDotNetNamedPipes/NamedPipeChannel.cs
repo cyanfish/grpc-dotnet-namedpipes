@@ -46,7 +46,7 @@ namespace GrpcDotNetNamedPipes
             where TRequest : class where TResponse : class
         {
             var pipeOptions = PipeOptions.Asynchronous;
-#if NETCOREAPP
+#if NETCOREAPP || NETSTANDARD2_1
             if (_options.CurrentUserOnly)
             {
                 pipeOptions |= PipeOptions.CurrentUserOnly;

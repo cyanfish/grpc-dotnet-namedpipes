@@ -42,11 +42,13 @@ namespace GrpcDotNetNamedPipes.Internal
         private NamedPipeServerStream CreatePipeServer()
         {
             var pipeOptions = PipeOptions.Asynchronous;
-#if NETCOREAPP
+#if NETCOREAPP || NETSTANDARD
+#if !NETSTANDARD2_0
             if (_options.CurrentUserOnly)
             {
                 pipeOptions |= PipeOptions.CurrentUserOnly;
             }
+#endif
 
             return new NamedPipeServerStream(_pipeName,
                 PipeDirection.InOut,

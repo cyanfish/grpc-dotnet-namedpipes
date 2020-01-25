@@ -1,19 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net46;netcoreapp2.1</TargetFrameworks>
+        <TargetFrameworks>net46;netcoreapp2.1;netstandard2.1;netstandard2.0</TargetFrameworks>
         <LangVersion>8</LangVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>1.0</Version>
+        <Authors>Ben Olden-Cooligan</Authors>
+        <Company>Google</Company>
+        <Description>Unofficial windows named pipe transport for gRPC</Description>
+        <Copyright>Copyright 2020 Google LLC</Copyright>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <RepositoryUrl>https://github.com/cyanfish/grpc-dotnet-namedpipes</RepositoryUrl>
+        <Title>GrpcDotNetNamedPipes</Title>
+        <PackageVersion>1.0.1</PackageVersion>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Google.Protobuf" Version="3.11.2" />
       <PackageReference Include="Grpc.Core.Api" Version="2.26.0" />
       <PackageReference Include="Grpc.Tools" Version="2.26.0" PrivateAssets="All" />
-      <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     </ItemGroup>
     
     <ItemGroup>
         <Protobuf Include="**/*.proto" Access="Internal" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <None Include="..\LICENSE">
+        <Pack>True</Pack>
+        <PackagePath></PackagePath>
+      </None>
     </ItemGroup>
 
 </Project>
