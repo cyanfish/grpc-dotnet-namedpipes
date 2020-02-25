@@ -96,6 +96,11 @@ namespace GrpcDotNetNamedPipes.Internal
             int fallback = FallbackMin;
             while (true)
             {
+                if (_cts.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 try
                 {
                     ListenForConnection();
