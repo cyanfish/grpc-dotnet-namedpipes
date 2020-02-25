@@ -366,5 +366,14 @@ namespace GrpcDotNetNamedPipes.Tests
                 }
             }
         }
+
+        [Theory]
+        [ClassData(typeof(MultiChannelClassData))]
+        public void ConnectionTimeout(ChannelContextFactory factory)
+        {
+            var client = factory.CreateClient();
+            var exception = Assert.Throws<RpcException>(() => client.SimpleUnary(new RequestMessage { Value = 10 }));
+            Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
+        }
     }
 }
