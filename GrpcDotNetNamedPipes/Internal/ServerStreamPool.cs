@@ -144,6 +144,7 @@ namespace GrpcDotNetNamedPipes.Internal
         public void Dispose()
         {
             _cts.Cancel();
+            _started = false;
         }
     }
 }

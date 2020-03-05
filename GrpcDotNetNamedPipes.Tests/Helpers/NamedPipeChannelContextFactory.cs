@@ -22,7 +22,7 @@ namespace GrpcDotNetNamedPipes.Tests.Helpers
     public class NamedPipeChannelContextFactory : ChannelContextFactory
     {
         private readonly string _pipeName = $"GrpcNamedPipeTests/{Guid.NewGuid()}";
-        private readonly int _connectionTimeout = 100;
+        private const int _connectionTimeout = 100;
             
         public override ChannelContext Create()
         {

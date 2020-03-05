@@ -374,6 +374,7 @@ namespace GrpcDotNetNamedPipes.Tests
             var client = factory.CreateClient();
             var exception = Assert.Throws<RpcException>(() => client.SimpleUnary(new RequestMessage { Value = 10 }));
             Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
+            Assert.Equal("failed to connect to all addresses", exception.Status.Detail);
         }
     }
 }

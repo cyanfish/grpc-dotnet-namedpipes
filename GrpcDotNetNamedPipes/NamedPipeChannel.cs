@@ -70,11 +70,11 @@ namespace GrpcDotNetNamedPipes
 
                 if (ex is TimeoutException)
                 {
-                    throw new RpcException(new Status(StatusCode.Unavailable, ex.Message));
+                    throw new RpcException(new Status(StatusCode.Unavailable, "failed to connect to all addresses"));
                 }
                 else
                 {
-                    throw new RpcException(Status.DefaultCancelled);
+                    throw;
                 }
             }
         }
