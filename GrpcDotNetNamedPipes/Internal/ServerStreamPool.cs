@@ -96,22 +96,17 @@ namespace GrpcDotNetNamedPipes.Internal
             int fallback = FallbackMin;
             while (true)
             {
-                if (_cts.IsCancellationRequested)
-                {
-                    break;
-                }
-
                 try
                 {
                     ListenForConnection();
                     fallback = FallbackMin;
                 }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
                 catch (Exception)
                 {
+                    if (_cts.IsCancellationRequested)
+                    {
+                        break;
+                    }
                     // TODO: Log
                     Thread.Sleep(fallback);
                     fallback = Math.Min(fallback * 2, FallbackMax);
@@ -144,7 +139,6 @@ namespace GrpcDotNetNamedPipes.Internal
         public void Dispose()
         {
             _cts.Cancel();
-            _started = false;
         }
     }
 }
