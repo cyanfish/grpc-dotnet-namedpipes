@@ -15,6 +15,7 @@
  */
 
 using System.Security.Principal;
+using System.Threading;
 
 namespace GrpcDotNetNamedPipes
 {
@@ -32,5 +33,10 @@ namespace GrpcDotNetNamedPipes
         /// Gets or sets a value indicating the security impersonation level.
         /// </summary>
         public TokenImpersonationLevel ImpersonationLevel { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the number of milliseconds to wait for the server to respond before the connection times out.
+        /// </summary>
+        public int ConnectionTimeout { get; set; } = Timeout.Infinite;
     }
 }

@@ -29,6 +29,7 @@ namespace GrpcDotNetNamedPipes.Internal
         private readonly bool _isServerUnary;
         private readonly PayloadQueue _payloadQueue;
         private readonly Deadline _deadline;
+        private readonly int _connectionTimeout;
 
         private readonly TaskCompletionSource<Metadata> _responseHeadersTcs =
             new TaskCompletionSource<Metadata>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -38,7 +39,7 @@ namespace GrpcDotNetNamedPipes.Internal
         private Metadata _responseTrailers;
         private Status _status;
 
-        public ClientConnectionContext(NamedPipeClientStream pipeStream, CallOptions callOptions, bool isServerUnary)
+        public ClientConnectionContext(NamedPipeClientStream pipeStream, CallOptions callOptions, bool isServerUnary, int connectionTimeout)
         {
             _pipeStream = pipeStream;
             _callOptions = callOptions;
@@ -46,6 +47,7 @@ namespace GrpcDotNetNamedPipes.Internal
             Transport = new NamedPipeTransport(pipeStream);
             _payloadQueue = new PayloadQueue();
             _deadline = new Deadline(callOptions.Deadline);
+            _connectionTimeout = connectionTimeout;
         }
 
         public NamedPipeTransport Transport { get; }
@@ -59,7 +61,7 @@ namespace GrpcDotNetNamedPipes.Internal
                 return;
             }
 
-            _pipeStream.Connect();
+            _pipeStream.Connect(_connectionTimeout);
             _pipeStream.ReadMode = PipeTransmissionMode.Message;
 
             if (request != null)

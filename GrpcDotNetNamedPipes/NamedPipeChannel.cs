@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 using System;
 using System.IO;
 using System.IO.Pipes;
@@ -59,15 +59,23 @@ namespace GrpcDotNetNamedPipes
             try
             {
                 bool isServerUnary = method.Type == MethodType.Unary || method.Type == MethodType.ClientStreaming;
-                var ctx = new ClientConnectionContext(stream, callOptions, isServerUnary);
+                var ctx = new ClientConnectionContext(stream, callOptions, isServerUnary, _options.ConnectionTimeout);
                 ctx.InitCall(method, request);
                 Task.Run(new PipeReader(stream, ctx, ctx.Dispose).ReadLoop);
                 return ctx;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 stream.Dispose();
-                throw;
+
+                if (ex is TimeoutException)
+                {
+                    throw new RpcException(new Status(StatusCode.Unavailable, "failed to connect to all addresses"));
+                }
+                else
+                {
+                    throw;
+                }
             }
         }
 

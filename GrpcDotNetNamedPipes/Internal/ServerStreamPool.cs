@@ -96,6 +96,11 @@ namespace GrpcDotNetNamedPipes.Internal
             int fallback = FallbackMin;
             while (true)
             {
+                if (_cts.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 try
                 {
                     ListenForConnection();
@@ -139,6 +144,7 @@ namespace GrpcDotNetNamedPipes.Internal
         public void Dispose()
         {
             _cts.Cancel();
+            _started = false;
         }
     }
 }
