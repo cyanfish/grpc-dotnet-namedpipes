@@ -14,7 +14,6 @@
         <Title>GrpcDotNetNamedPipes</Title>
         <PackageVersion>1.1.1</PackageVersion>
         <PackageProjectUrl>https://github.com/cyanfish/grpc-dotnet-namedpipes</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/cyanfish/grpc-dotnet-namedpipes/blob/master/LICENSE</PackageLicenseUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>grpc namedpipe namedpipes named pipe pipes</PackageTags>
     </PropertyGroup>
