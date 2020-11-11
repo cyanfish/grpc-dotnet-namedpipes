@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net46;netcoreapp3.1;netstandard2.1;netstandard2.0;net5.0</TargetFrameworks>
+        <TargetFrameworks>net46;netcoreapp3.1;netstandard2.1;netstandard2.0;net5.0-windows</TargetFrameworks>
         <LangVersion>8</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Version>1.0.2</Version>
