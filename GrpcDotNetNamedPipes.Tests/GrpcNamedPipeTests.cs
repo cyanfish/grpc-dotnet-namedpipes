@@ -15,7 +15,10 @@
  */
 
 using System;
+using System.IO.Pipes;
 using System.Linq;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
@@ -377,5 +380,39 @@ namespace GrpcDotNetNamedPipes.Tests
             Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
             Assert.Equal("failed to connect to all addresses", exception.Status.Detail);
         }
+
+#if NET_5_0 || NETFRAMEWORK
+        [Theory]
+        [ClassData(typeof(NamedPipeClassData))]
+        public void SimpleUnaryWithACLs(NamedPipeChannelContextFactory factory)
+        {
+            PipeSecurity security = new PipeSecurity();
+            SecurityIdentifier sid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+            security.AddAccessRule(new PipeAccessRule(sid, PipeAccessRights.ReadWrite, AccessControlType.Allow));
+            security.AddAccessRule(new PipeAccessRule(WindowsIdentity.GetCurrent().User, PipeAccessRights.FullControl, AccessControlType.Allow));
+
+            NamedPipeServerOptions options = new NamedPipeServerOptions { PipeSecurity = security };
+
+            using var ctx = factory.Create(options);
+            var response = ctx.Client.SimpleUnary(new RequestMessage { Value = 10 });
+            Assert.Equal(10, response.Value);
+            Assert.True(ctx.Impl.SimplyUnaryCalled);
+        }
+
+        [Theory]
+        [ClassData(typeof(NamedPipeClassData))]
+        public void SimpleUnaryWithACLsDenied(NamedPipeChannelContextFactory factory)
+        {
+            PipeSecurity security = new PipeSecurity();
+            SecurityIdentifier sid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+            security.AddAccessRule(new PipeAccessRule(sid, PipeAccessRights.ReadWrite, AccessControlType.Allow));
+            security.AddAccessRule(new PipeAccessRule(WindowsIdentity.GetCurrent().User, PipeAccessRights.ReadWrite, AccessControlType.Deny));
+
+            NamedPipeServerOptions options = new NamedPipeServerOptions { PipeSecurity = security };
+
+            using var ctx = factory.Create(options);
+            var exception = Assert.Throws<UnauthorizedAccessException>(() => ctx.Client.SimpleUnary(new RequestMessage { Value = 10 }));
+        }
+#endif
     }
 }

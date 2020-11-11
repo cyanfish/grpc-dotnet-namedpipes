@@ -24,10 +24,10 @@ namespace GrpcDotNetNamedPipes.Tests.Helpers
         private readonly string _pipeName = $"GrpcNamedPipeTests/{Guid.NewGuid()}";
         private const int _connectionTimeout = 100;
             
-        public override ChannelContext Create()
+        public ChannelContext Create(NamedPipeServerOptions options)
         {
             var impl = new TestServiceImpl();
-            var server = new NamedPipeServer(_pipeName);
+            var server = new NamedPipeServer(_pipeName, options);
             TestService.BindService(server.ServiceBinder, impl);
             server.Start();
             return new ChannelContext
@@ -36,6 +36,11 @@ namespace GrpcDotNetNamedPipes.Tests.Helpers
                 Client = CreateClient(),
                 OnDispose = () => server.Kill()
             };
+        }
+
+        public override ChannelContext Create()
+        {
+            return Create(new NamedPipeServerOptions());
         }
 
         public override TestService.TestServiceClient CreateClient()

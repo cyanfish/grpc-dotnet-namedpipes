@@ -52,11 +52,22 @@ namespace GrpcDotNetNamedPipes.Internal
             }
 #endif
 
+#if NET5_0
+            return NamedPipeServerStreamAcl.Create(_pipeName,
+                PipeDirection.InOut,
+                NamedPipeServerStream.MaxAllowedServerInstances,
+                PipeTransmissionMode.Message,
+                pipeOptions,
+                0,
+                0,
+                _options.PipeSecurity);
+#else
             return new NamedPipeServerStream(_pipeName,
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
                 PipeTransmissionMode.Message,
                 pipeOptions);
+#endif
 #endif
 #if NETFRAMEWORK
             return new NamedPipeServerStream(_pipeName,
