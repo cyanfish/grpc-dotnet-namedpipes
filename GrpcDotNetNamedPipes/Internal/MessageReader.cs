@@ -59,7 +59,7 @@ namespace GrpcDotNetNamedPipes.Internal
             }
         }
 
-        public TMessage Current => _marshaller.Deserializer(_payloadQueue.Current);
+        public TMessage Current => SerializationHelpers.Deserialize(_marshaller, _payloadQueue.Current);
 
         public Task<TMessage> ReadNextMessage()
         {
