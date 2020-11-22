@@ -194,16 +194,15 @@ namespace GrpcDotNetNamedPipes.Tests
             Assert.False(await call.ResponseStream.MoveNext());
         }
 
-        [Fact]
-        public async Task CancelServerStreaming()
+        [Theory]
+        [ClassData(typeof(MultiChannelClassData))]
+        public async Task CancelServerStreaming(ChannelContextFactory factory)
         {
-            // Don't run for http (exception throwing is flaky)
-            var factory = new NamedPipeChannelContextFactory();
             using var ctx = factory.Create();
             var cts = new CancellationTokenSource();
             var call = ctx.Client.DelayedServerStreaming(new RequestMessage {Value = 3},
                 cancellationToken: cts.Token);
-            cts.CancelAfter(100);
+            cts.CancelAfter(500);
             Assert.True(await call.ResponseStream.MoveNext());
             Assert.Equal(3, call.ResponseStream.Current.Value);
             var exception = await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
