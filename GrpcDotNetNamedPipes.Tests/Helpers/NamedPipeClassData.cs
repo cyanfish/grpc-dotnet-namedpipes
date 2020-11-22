@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-using System.IO.Pipes;
+using System.Collections;
+using System.Collections.Generic;
 
-namespace GrpcDotNetNamedPipes
+namespace GrpcDotNetNamedPipes.Tests.Helpers
 {
-    public class NamedPipeServerOptions
+    class NamedPipeClassData : IEnumerable<object[]>
     {
-#if NETCOREAPP || NETSTANDARD2_1
-        /// <summary>
-        /// Gets or sets a value indicating whether the server pipe can only be connected to a client created by the
-        /// same user.
-        /// </summary>
-        public bool CurrentUserOnly { get; set; }
-#endif
-#if NETFRAMEWORK || NET5_0
-        /// <summary>
-        /// Gets or sets a value indicating the access control to be used for the pipe.
-        /// </summary>
-        public PipeSecurity PipeSecurity { get; set; }
-#endif
+        public IEnumerator<object[]> GetEnumerator()
+        {
+            yield return new object[] { new NamedPipeChannelContextFactory() };
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
