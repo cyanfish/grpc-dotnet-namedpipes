@@ -66,7 +66,7 @@ namespace GrpcDotNetNamedPipes.Internal
 
             if (request != null)
             {
-                var payload = method.RequestMarshaller.Serializer(request);
+                var payload = SerializationHelpers.Serialize(method.RequestMarshaller, request);
                 Transport.Write()
                     .RequestInit(method.FullName, _callOptions.Deadline)
                     .Headers(_callOptions.Headers)

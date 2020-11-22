@@ -82,7 +82,7 @@ namespace GrpcDotNetNamedPipes
                         var request = await ctx.GetMessageReader(method.RequestMarshaller).ReadNextMessage()
                             .ConfigureAwait(false);
                         var response = await handler(request, ctx.CallContext).ConfigureAwait(false);
-                        ctx.Success(method.ResponseMarshaller.Serializer(response));
+                        ctx.Success(SerializationHelpers.Serialize(method.ResponseMarshaller, response));
                     }
                     catch (Exception ex)
                     {
@@ -101,7 +101,7 @@ namespace GrpcDotNetNamedPipes
                         var response = await handler(
                             ctx.GetMessageReader(method.RequestMarshaller),
                             ctx.CallContext).ConfigureAwait(false);
-                        ctx.Success(method.ResponseMarshaller.Serializer(response));
+                        ctx.Success(SerializationHelpers.Serialize(method.ResponseMarshaller, response));
                     }
                     catch (Exception ex)
                     {

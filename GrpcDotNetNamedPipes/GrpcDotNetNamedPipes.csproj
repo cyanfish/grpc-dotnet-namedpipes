@@ -4,7 +4,7 @@
         <TargetFrameworks>net46;netcoreapp2.1;netstandard2.1;netstandard2.0;net5.0-windows</TargetFrameworks>
         <LangVersion>8</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.2</Version>
+        <Version>1.2.0</Version>
         <Authors>Ben Olden-Cooligan</Authors>
         <Company>Google</Company>
         <Description>Unofficial windows named pipe transport for gRPC</Description>
@@ -12,17 +12,18 @@
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <RepositoryUrl>https://github.com/cyanfish/grpc-dotnet-namedpipes</RepositoryUrl>
         <Title>GrpcDotNetNamedPipes</Title>
-        <PackageVersion>1.1.1</PackageVersion>
+        <PackageVersion>1.2.0</PackageVersion>
         <PackageProjectUrl>https://github.com/cyanfish/grpc-dotnet-namedpipes</PackageProjectUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>grpc namedpipe namedpipes named pipe pipes</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Google.Protobuf" Version="3.11.2" />
-      <PackageReference Include="Grpc.Core.Api" Version="2.26.0" />
-      <PackageReference Include="Grpc.Tools" Version="2.26.0" PrivateAssets="All" />
+      <PackageReference Include="Google.Protobuf" Version="3.14.0" />
+      <PackageReference Include="Grpc.Core.Api" Version="2.33.1" />
+      <PackageReference Include="Grpc.Tools" Version="2.33.1" PrivateAssets="All" />
       <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
+      <PackageReference Include="System.Memory" Version="4.5.4" />
     </ItemGroup>
     
     <ItemGroup>

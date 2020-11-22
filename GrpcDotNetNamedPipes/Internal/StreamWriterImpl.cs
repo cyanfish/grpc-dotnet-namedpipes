@@ -42,7 +42,7 @@ namespace GrpcDotNetNamedPipes.Internal
                 return Task.FromCanceled(_cancellationToken);
             }
 
-            var payload = _marshaller.Serializer(message);
+            var payload = SerializationHelpers.Serialize(_marshaller, message);
             _stream.Write().Payload(payload).Commit();
             return Task.CompletedTask;
         }

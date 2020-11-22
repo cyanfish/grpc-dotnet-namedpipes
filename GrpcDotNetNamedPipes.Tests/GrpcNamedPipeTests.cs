@@ -206,7 +206,7 @@ namespace GrpcDotNetNamedPipes.Tests
             var cts = new CancellationTokenSource();
             var call = ctx.Client.DelayedServerStreaming(new RequestMessage {Value = 3},
                 cancellationToken: cts.Token);
-            cts.CancelAfter(100);
+            cts.CancelAfter(500);
             Assert.True(await call.ResponseStream.MoveNext());
             Assert.Equal(3, call.ResponseStream.Current.Value);
             var exception = await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
