@@ -197,11 +197,10 @@ namespace GrpcDotNetNamedPipes.Tests
             Assert.False(await call.ResponseStream.MoveNext());
         }
 
-        [Fact]
-        public async Task CancelServerStreaming()
+        [Theory(Skip = "Flaky")]
+        [ClassData(typeof(MultiChannelClassData))]
+        public async Task CancelServerStreaming(ChannelContextFactory factory)
         {
-            // Don't run for http (exception throwing is flaky)
-            var factory = new NamedPipeChannelContextFactory();
             using var ctx = factory.Create();
             var cts = new CancellationTokenSource();
             var call = ctx.Client.DelayedServerStreaming(new RequestMessage {Value = 3},
