@@ -38,7 +38,7 @@ namespace GrpcDotNetNamedPipes.Internal
                 if (_tcs != null)
                 {
                     Current = _internalQueue.Dequeue();
-                    _tcs.SetResult(true);
+                    _tcs.TrySetResult(true);
                     ResetTcs();
                 }
             }
@@ -57,7 +57,7 @@ namespace GrpcDotNetNamedPipes.Internal
                 _completed = true;
                 if (_tcs != null)
                 {
-                    _tcs.SetResult(false);
+                    _tcs.TrySetResult(false);
                     ResetTcs();
                 }
             }
@@ -70,7 +70,7 @@ namespace GrpcDotNetNamedPipes.Internal
                 _error = ex;
                 if (_tcs != null)
                 {
-                    _tcs.SetException(_error);
+                    _tcs.TrySetException(_error);
                     ResetTcs();
                 }
             }
@@ -107,7 +107,7 @@ namespace GrpcDotNetNamedPipes.Internal
                 }
 
                 _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _cancelReg = cancellationToken.Register(() => _tcs.SetCanceled());
+                _cancelReg = cancellationToken.Register(() => _tcs.TrySetCanceled());
                 return _tcs.Task;
             }
         }
