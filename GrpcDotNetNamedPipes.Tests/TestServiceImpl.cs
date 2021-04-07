@@ -27,6 +27,8 @@ namespace GrpcDotNetNamedPipes.Tests
 
         public bool SimplyUnaryCalled { get; private set; }
 
+        public IServerStreamWriter<ResponseMessage> ServerStream { get; private set; }
+
         public override Task<ResponseMessage> SimpleUnary(RequestMessage request, ServerCallContext context)
         {
             SimplyUnaryCalled = true;
@@ -70,6 +72,7 @@ namespace GrpcDotNetNamedPipes.Tests
         public override async Task ServerStreaming(RequestMessage request,
             IServerStreamWriter<ResponseMessage> responseStream, ServerCallContext context)
         {
+            ServerStream = responseStream;
             for (int i = request.Value; i > 0; i--)
             {
                 await responseStream.WriteAsync(new ResponseMessage {Value = i});
@@ -88,6 +91,17 @@ namespace GrpcDotNetNamedPipes.Tests
                     break;
                 }
             }
+        }
+
+        public override async Task ThrowingServerStreaming(RequestMessage request,
+            IServerStreamWriter<ResponseMessage> responseStream, ServerCallContext context)
+        {
+            ServerStream = responseStream;
+            for (int i = request.Value; i > 0; i--)
+            {
+                await responseStream.WriteAsync(new ResponseMessage {Value = i});
+            }
+            throw new Exception("blah");
         }
 
         public override async Task DuplexStreaming(IAsyncStreamReader<RequestMessage> requestStream,
@@ -110,6 +124,16 @@ namespace GrpcDotNetNamedPipes.Tests
                 await responseStream.WriteAsync(new ResponseMessage {Value = requestStream.Current.Value});
                 await Task.Delay(1000, context.CancellationToken);
             }
+        }
+
+        public override async Task ThrowingDuplexStreaming(IAsyncStreamReader<RequestMessage> requestStream,
+            IServerStreamWriter<ResponseMessage> responseStream, ServerCallContext context)
+        {
+            while (await requestStream.MoveNext())
+            {
+                await responseStream.WriteAsync(new ResponseMessage {Value = requestStream.Current.Value});
+            }
+            throw new Exception("blah");
         }
 
         public override async Task<ResponseMessage> HeadersTrailers(RequestMessage request, ServerCallContext context)
