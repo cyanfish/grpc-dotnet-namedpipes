@@ -181,6 +181,19 @@ namespace GrpcDotNetNamedPipes.Tests
             var exception = await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseAsync);
             Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
         }
+        
+        [Theory]
+        [ClassData(typeof(MultiChannelClassData))]
+        public async Task ClientStreamWriteAfterCompletion(ChannelContextFactory factory)
+        {
+            using var ctx = factory.Create();
+            var call = ctx.Client.ClientStreaming();
+            await call.RequestStream.WriteAsync(new RequestMessage { Value = 1 });
+            await call.RequestStream.CompleteAsync();
+            void WriteAction() => call.RequestStream.WriteAsync(new RequestMessage { Value = 1 });
+            var exception = Assert.Throws<InvalidOperationException>(WriteAction);
+            Assert.Equal("Request stream has already been completed.", exception.Message);
+        }
 
         [Theory]
         [ClassData(typeof(MultiChannelClassData))]
@@ -235,6 +248,32 @@ namespace GrpcDotNetNamedPipes.Tests
             var exception = await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
             Assert.Equal(StatusCode.Unknown, exception.StatusCode);
             Assert.Equal("Exception was thrown by handler.", exception.Status.Detail);
+        }
+        
+        [Theory]
+        [ClassData(typeof(MultiChannelClassData))]
+        public async Task ServerStreamWriteAfterCompletion(ChannelContextFactory factory)
+        {
+            using var ctx = factory.Create();
+            var call = ctx.Client.ServerStreaming(new RequestMessage { Value = 1 });
+            Assert.True(await call.ResponseStream.MoveNext());
+            Assert.False(await call.ResponseStream.MoveNext());
+            void WriteAction() => ctx.Impl.ServerStream.WriteAsync(new ResponseMessage { Value = 1 });
+            var exception = Assert.Throws<InvalidOperationException>(WriteAction);
+            Assert.Equal("Response stream has already been completed.", exception.Message);
+        }
+        
+        [Theory]
+        [ClassData(typeof(MultiChannelClassData))]
+        public async Task ServerStreamWriteAfterError(ChannelContextFactory factory)
+        {
+            using var ctx = factory.Create();
+            var call = ctx.Client.ThrowingServerStreaming(new RequestMessage { Value = 1 });
+            Assert.True(await call.ResponseStream.MoveNext());
+            await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
+            void WriteAction() => ctx.Impl.ServerStream.WriteAsync(new ResponseMessage { Value = 1 });
+            var exception = Assert.Throws<InvalidOperationException>(WriteAction);
+            Assert.Equal("Response stream has already been completed.", exception.Message);
         }
 
         [Theory]

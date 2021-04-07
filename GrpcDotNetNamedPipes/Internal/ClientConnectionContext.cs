@@ -147,7 +147,7 @@ namespace GrpcDotNetNamedPipes.Internal
 
         public IClientStreamWriter<TRequest> CreateRequestStream<TRequest>(Marshaller<TRequest> requestMarshaller)
         {
-            return new StreamWriterImpl<TRequest>(Transport, _callOptions.CancellationToken, requestMarshaller);
+            return new RequestStreamWriterImpl<TRequest>(Transport, _callOptions.CancellationToken, requestMarshaller);
         }
 
         public void DisposeCall()

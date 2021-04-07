@@ -50,6 +50,8 @@ namespace GrpcDotNetNamedPipes.Internal
         public Metadata RequestHeaders { get; private set; }
 
         public ServerCallContext CallContext { get; }
+        
+        public bool IsCompleted { get; private set; }
 
         public MessageReader<TRequest> GetMessageReader<TRequest>(Marshaller<TRequest> requestMarshaller)
         {
@@ -58,7 +60,7 @@ namespace GrpcDotNetNamedPipes.Internal
 
         public IServerStreamWriter<TResponse> CreateResponseStream<TResponse>(Marshaller<TResponse> responseMarshaller)
         {
-            return new StreamWriterImpl<TResponse>(Transport, CancellationToken.None, responseMarshaller);
+            return new ResponseStreamWriterImpl<TResponse>(Transport, CancellationToken.None, responseMarshaller, () => IsCompleted);
         }
 
         public override void HandleRequestInit(string methodFullName, DateTime? deadline)
@@ -77,6 +79,7 @@ namespace GrpcDotNetNamedPipes.Internal
 
         public void Error(Exception ex)
         {
+            IsCompleted = true;
             if (Deadline != null && Deadline.IsExpired)
             {
                 WriteTrailers(StatusCode.DeadlineExceeded, "");
@@ -97,6 +100,7 @@ namespace GrpcDotNetNamedPipes.Internal
 
         public void Success(byte[] responsePayload = null)
         {
+            IsCompleted = true;
             if (CallContext.Status.StatusCode != StatusCode.OK)
             {
                 WriteTrailers(CallContext.Status.StatusCode, CallContext.Status.Detail);
