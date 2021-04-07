@@ -210,7 +210,7 @@ namespace GrpcDotNetNamedPipes.Tests
             Assert.False(await call.ResponseStream.MoveNext());
         }
 
-        [Theory(Skip = "Flaky")]
+        [Theory]
         [ClassData(typeof(MultiChannelClassData))]
         public async Task CancelServerStreaming(ChannelContextFactory factory)
         {
