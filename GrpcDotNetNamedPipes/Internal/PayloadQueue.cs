@@ -76,6 +76,18 @@ namespace GrpcDotNetNamedPipes.Internal
             }
         }
 
+        public void SetCanceled()
+        {
+            lock (this)
+            {
+                if (_tcs != null)
+                {
+                    _tcs.SetCanceled();
+                    ResetTcs();
+                }
+            }
+        }
+
         public Task<bool> MoveNext(CancellationToken cancellationToken)
         {
             lock (this)
@@ -107,8 +119,9 @@ namespace GrpcDotNetNamedPipes.Internal
                 }
 
                 _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _cancelReg = cancellationToken.Register(() => _tcs.SetCanceled());
-                return _tcs.Task;
+                var task = _tcs.Task;
+                _cancelReg = cancellationToken.Register(SetCanceled);
+                return task;
             }
         }
 

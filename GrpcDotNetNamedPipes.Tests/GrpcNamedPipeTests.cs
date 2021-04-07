@@ -380,6 +380,30 @@ namespace GrpcDotNetNamedPipes.Tests
             Assert.Equal("failed to connect to all addresses", exception.Status.Detail);
         }
 
+        [Theory]
+        [ClassData(typeof(NamedPipeClassData))]
+        public async Task CancellationRace(NamedPipeChannelContextFactory factory)
+        {
+            using var ctx = factory.Create();
+            var random = new Random();
+            for (int i = 0; i < 200; i++)
+            {
+                var cts = new CancellationTokenSource();
+                var response = ctx.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 }, cancellationToken: cts.Token);
+                Thread.Sleep(random.Next(10));
+                cts.Cancel();
+                // Either a result or cancellation is okay, but we shouldn't get any other errors
+                try
+                {
+                    Assert.Equal(10, (await response).Value);
+                }
+                catch (RpcException ex)
+                {
+                    Assert.Equal(StatusCode.Cancelled, ex.StatusCode);
+                }
+            }
+        }
+
 #if NET_5_0 || NETFRAMEWORK
         [Theory]
         [ClassData(typeof(NamedPipeClassData))]

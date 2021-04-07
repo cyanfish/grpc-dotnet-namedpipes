@@ -72,7 +72,7 @@ namespace GrpcDotNetNamedPipes.Internal
                     .Headers(_callOptions.Headers)
                     .Payload(payload)
                     .Commit();
-                _cancelReg = _callOptions.CancellationToken.Register(() => Transport.Write().Cancel().Commit());
+                _cancelReg = _callOptions.CancellationToken.Register(DisposeCall);
             }
             else
             {
@@ -80,7 +80,7 @@ namespace GrpcDotNetNamedPipes.Internal
                     .RequestInit(method.FullName, _callOptions.Deadline)
                     .Headers(_callOptions.Headers)
                     .Commit();
-                _cancelReg = _callOptions.CancellationToken.Register(() => Transport.Write().Cancel().Commit());
+                _cancelReg = _callOptions.CancellationToken.Register(DisposeCall);
             }
         }
 
