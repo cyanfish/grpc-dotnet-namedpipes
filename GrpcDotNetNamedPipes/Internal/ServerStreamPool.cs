@@ -32,6 +32,7 @@ namespace GrpcDotNetNamedPipes.Internal
         private readonly NamedPipeServerOptions _options;
         private readonly Func<NamedPipeServerStream, Task> _handleConnection;
         private bool _started;
+        private bool _stopped;
 
         public ServerStreamPool(string pipeName, NamedPipeServerOptions options,
             Func<NamedPipeServerStream, Task> handleConnection)
@@ -83,6 +84,10 @@ namespace GrpcDotNetNamedPipes.Internal
 
         public void Start()
         {
+            if (_stopped)
+            {
+                throw new InvalidOperationException("The server has been killed and can't be restarted. Create a new server if needed.");
+            }
             if (_started)
             {
                 return;
@@ -175,6 +180,7 @@ namespace GrpcDotNetNamedPipes.Internal
 
         public void Dispose()
         {
+            _stopped = true;
             try
             {
                 _cts.Cancel();

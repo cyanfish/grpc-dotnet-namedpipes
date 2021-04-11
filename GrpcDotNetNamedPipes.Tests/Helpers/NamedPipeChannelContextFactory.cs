@@ -49,6 +49,8 @@ namespace GrpcDotNetNamedPipes.Tests.Helpers
             return new TestService.TestServiceClient(channel);
         }
 
+        public NamedPipeServer CreateServer() => new NamedPipeServer(_pipeName, new NamedPipeServerOptions());
+
         public override string ToString()
         {
             return "pipe";

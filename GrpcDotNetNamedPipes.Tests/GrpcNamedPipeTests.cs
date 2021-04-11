@@ -512,6 +512,16 @@ namespace GrpcDotNetNamedPipes.Tests
             Assert.Equal(10, response2.Value);
         }
 
+        [Theory]
+        [ClassData(typeof(NamedPipeClassData))]
+        public void StartServerAfterStop(NamedPipeChannelContextFactory factory)
+        {
+            var server = factory.CreateServer();
+            server.Start();
+            server.Kill();
+            Assert.Throws<InvalidOperationException>(() => server.Start());
+        }
+
 #if NET_5_0 || NETFRAMEWORK
         [Theory]
         [ClassData(typeof(NamedPipeClassData))]
