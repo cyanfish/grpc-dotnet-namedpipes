@@ -72,7 +72,7 @@ namespace GrpcDotNetNamedPipes.Tests
             var cts = new CancellationTokenSource();
             var responseTask =
                 ctx.Client.DelayedUnaryAsync(new RequestMessage {Value = 10}, cancellationToken: cts.Token);
-            cts.CancelAfter(500);
+            cts.Cancel();
             var exception = await Assert.ThrowsAsync<RpcException>(async () => await responseTask);
             Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
         }
@@ -134,7 +134,7 @@ namespace GrpcDotNetNamedPipes.Tests
             var cts = new CancellationTokenSource();
             var responseTask =
                 ctx.Client.DelayedThrowingUnaryAsync(new RequestMessage {Value = 10}, cancellationToken: cts.Token);
-            cts.CancelAfter(500);
+            cts.Cancel();
             var exception = await Assert.ThrowsAsync<RpcException>(async () => await responseTask);
             Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
         }
@@ -216,11 +216,11 @@ namespace GrpcDotNetNamedPipes.Tests
         {
             using var ctx = factory.Create();
             var cts = new CancellationTokenSource();
-            var call = ctx.Client.DelayedServerStreaming(new RequestMessage {Value = 3},
+            var call = ctx.Client.DelayedServerStreaming(new RequestMessage { Value = 3 },
                 cancellationToken: cts.Token);
-            cts.CancelAfter(500);
             Assert.True(await call.ResponseStream.MoveNext());
             Assert.Equal(3, call.ResponseStream.Current.Value);
+            cts.Cancel();
             var exception = await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
             Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
         }
@@ -309,10 +309,10 @@ namespace GrpcDotNetNamedPipes.Tests
             using var ctx = factory.Create();
             var cts = new CancellationTokenSource();
             var call = ctx.Client.DelayedDuplexStreaming(cancellationToken: cts.Token);
-            cts.CancelAfter(500);
             await call.RequestStream.WriteAsync(new RequestMessage {Value = 1});
             Assert.True(await call.ResponseStream.MoveNext());
             Assert.Equal(1, call.ResponseStream.Current.Value);
+            cts.Cancel();
             var exception = await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
             Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
         }

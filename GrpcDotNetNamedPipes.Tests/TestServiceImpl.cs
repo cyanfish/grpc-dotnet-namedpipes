@@ -85,7 +85,7 @@ namespace GrpcDotNetNamedPipes.Tests
             for (int i = request.Value; i > 0; i--)
             {
                 await responseStream.WriteAsync(new ResponseMessage {Value = i});
-                await Task.Delay(1000, context.CancellationToken);
+                await Task.Delay(2000, context.CancellationToken);
                 if (context.CancellationToken.IsCancellationRequested)
                 {
                     break;
@@ -122,7 +122,7 @@ namespace GrpcDotNetNamedPipes.Tests
             while (await requestStream.MoveNext(context.CancellationToken))
             {
                 await responseStream.WriteAsync(new ResponseMessage {Value = requestStream.Current.Value});
-                await Task.Delay(1000, context.CancellationToken);
+                await Task.Delay(2000, context.CancellationToken);
             }
         }
 
