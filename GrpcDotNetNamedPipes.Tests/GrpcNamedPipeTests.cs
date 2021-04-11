@@ -475,7 +475,7 @@ namespace GrpcDotNetNamedPipes.Tests
         {
             using var ctx = factory.Create();
             ctx.Dispose();
-            var exception = Assert.Throws<RpcException>(() => ctx.Client.SimpleUnary(new RequestMessage { Value = 10 }, deadline: DateTime.UtcNow.AddSeconds(0.1)));
+            var exception = Assert.Throws<RpcException>(() => ctx.Client.SimpleUnary(new RequestMessage { Value = 10 }));
             Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
             Assert.Equal("failed to connect to all addresses", exception.Status.Detail);
         }
@@ -485,7 +485,7 @@ namespace GrpcDotNetNamedPipes.Tests
         public async Task RestartServerAfterCall(ChannelContextFactory factory)
         {
             using var ctx1 = factory.Create();
-            var response1 = await ctx1.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 }, deadline: DateTime.UtcNow.AddSeconds(0.1));
+            var response1 = await ctx1.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 });
             Assert.Equal(10, response1.Value);
 
             await Task.Delay(500);
