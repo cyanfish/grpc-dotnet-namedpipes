@@ -128,7 +128,33 @@ namespace GrpcDotNetNamedPipes.Internal
         private void ListenForConnection()
         {
             var pipeServer = CreatePipeServer();
-            pipeServer.WaitForConnectionAsync(_cts.Token).Wait();
+            WaitForConnection(pipeServer);
+            RunHandleConnection(pipeServer);
+        }
+
+        private void WaitForConnection(NamedPipeServerStream pipeServer)
+        {
+            try
+            {
+                pipeServer.WaitForConnectionAsync(_cts.Token).Wait();
+            }
+            catch (Exception)
+            {
+                try
+                {
+                    pipeServer.Disconnect();
+                }
+                catch (Exception)
+                {
+                    // Ignore disconnection errors
+                }
+                pipeServer.Dispose();
+                throw;
+            }
+        }
+
+        private void RunHandleConnection(NamedPipeServerStream pipeServer)
+        {
             Task.Run(() =>
             {
                 try
@@ -149,7 +175,14 @@ namespace GrpcDotNetNamedPipes.Internal
 
         public void Dispose()
         {
-            _cts.Cancel();
+            try
+            {
+                _cts.Cancel();
+            }
+            catch (Exception)
+            {
+                // TODO: Log
+            }
         }
     }
 }

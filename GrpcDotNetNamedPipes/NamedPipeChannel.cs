@@ -68,7 +68,7 @@ namespace GrpcDotNetNamedPipes
             {
                 stream.Dispose();
 
-                if (ex is TimeoutException)
+                if (ex is TimeoutException || ex is IOException)
                 {
                     throw new RpcException(new Status(StatusCode.Unavailable, "failed to connect to all addresses"));
                 }

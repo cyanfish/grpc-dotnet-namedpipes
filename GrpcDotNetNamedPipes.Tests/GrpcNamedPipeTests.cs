@@ -469,6 +469,49 @@ namespace GrpcDotNetNamedPipes.Tests
             }
         }
 
+        [Theory]
+        [ClassData(typeof(NamedPipeClassData))]
+        public void CallImmediatelyAfterKillingServer(NamedPipeChannelContextFactory factory)
+        {
+            using var ctx = factory.Create();
+            ctx.Dispose();
+            var exception = Assert.Throws<RpcException>(() => ctx.Client.SimpleUnary(new RequestMessage { Value = 10 }, deadline: DateTime.UtcNow.AddSeconds(0.1)));
+            Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
+            Assert.Equal("failed to connect to all addresses", exception.Status.Detail);
+        }
+
+        [Theory]
+        [ClassData(typeof(MultiChannelClassData))]
+        public async Task RestartServerAfterCall(ChannelContextFactory factory)
+        {
+            using var ctx1 = factory.Create();
+            var response1 = await ctx1.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 }, deadline: DateTime.UtcNow.AddSeconds(0.1));
+            Assert.Equal(10, response1.Value);
+
+            await Task.Delay(500);
+            ctx1.Dispose();
+            await Task.Delay(500);
+
+            using var ctx2 = factory.Create();
+            var response2 = await ctx2.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 });
+            Assert.Equal(10, response2.Value);
+        }
+
+        [Theory]
+        [ClassData(typeof(MultiChannelClassData))]
+        public async Task RestartServerAfterNoCalls(ChannelContextFactory factory)
+        {
+            using var ctx1 = factory.Create();
+
+            await Task.Delay(500);
+            ctx1.Dispose();
+            await Task.Delay(500);
+
+            using var ctx2 = factory.Create();
+            var response2 = await ctx2.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 });
+            Assert.Equal(10, response2.Value);
+        }
+
 #if NET_5_0 || NETFRAMEWORK
         [Theory]
         [ClassData(typeof(NamedPipeClassData))]
