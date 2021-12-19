@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.3
+- Add strong naming to the assembly
+
 ## 1.4.2
 - Throw an exception when starting an already-killed server
 
