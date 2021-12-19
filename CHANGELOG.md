@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.3
+## 1.4.4
 - Add strong naming to the assembly
 
 ## 1.4.2
