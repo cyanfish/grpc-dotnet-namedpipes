@@ -5,9 +5,9 @@
         <LangVersion>8</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
-        <Version>1.4.4</Version>
-        <PackageVersion>1.4.4</PackageVersion>
-        <AssemblyVersion>1.4.4</AssemblyVersion>
+        <Version>1.4.5</Version>
+        <PackageVersion>1.4.5</PackageVersion>
+        <AssemblyVersion>1.4.5</AssemblyVersion>
 
         <Authors>Ben Olden-Cooligan</Authors>
         <Company>Google</Company>
