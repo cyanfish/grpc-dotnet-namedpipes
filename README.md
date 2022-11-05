@@ -2,14 +2,14 @@
 
 [![NuGet](https://img.shields.io/nuget/v/GrpcDotNetNamedPipes)](https://www.nuget.org/packages/GrpcDotNetNamedPipes/)
 
-Windows named pipe transport for [gRPC](https://grpc.io/) in C#/.NET.
+Named pipe transport for [gRPC](https://grpc.io/) in C#/.NET.
 
 **This is not an official Google product.**
 
 ## Supported platforms
 
-- .NET Framework 4.6+ (Windows)
-- .NET Core 2.1+ (Windows)
+- .NET Framework 4.6.2+ (Windows)
+- .NET 6+ (Windows, macOS, Linux)
 
 ## Usage
 
