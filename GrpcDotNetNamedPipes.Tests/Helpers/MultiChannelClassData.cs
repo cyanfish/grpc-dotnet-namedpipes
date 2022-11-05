@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace GrpcDotNetNamedPipes.Tests.Helpers
 {
@@ -23,8 +25,15 @@ namespace GrpcDotNetNamedPipes.Tests.Helpers
     {
         public IEnumerator<object[]> GetEnumerator()
         {
-            yield return new object[] {new HttpChannelContextFactory()};
             yield return new object[] {new NamedPipeChannelContextFactory()};
+#if NET6_0_OR_GREATER
+            if (RuntimeInformation.OSArchitecture == Architecture.Arm64 && !OperatingSystem.IsLinux())
+            {
+                // No grpc implementation available for comparison
+                yield break;
+            }
+#endif
+            yield return new object[] {new HttpChannelContextFactory()};
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

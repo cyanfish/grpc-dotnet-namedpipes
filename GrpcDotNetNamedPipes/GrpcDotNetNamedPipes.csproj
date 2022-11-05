@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net46;netcoreapp2.1;netstandard2.1;netstandard2.0;net5.0-windows</TargetFrameworks>
+        <TargetFrameworks>net462;netstandard2.0;net6</TargetFrameworks>
         <LangVersion>8</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
@@ -25,20 +25,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Google.Protobuf" Version="3.14.0" />
-      <PackageReference Include="Grpc.Core.Api" Version="2.33.1" />
-      <PackageReference Include="Grpc.Tools" Version="2.33.1" PrivateAssets="All" />
-      <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" Condition="'$(TargetFramework)' == 'net5.0-windows'" />
-      <PackageReference Include="System.Memory" Version="4.5.4" />
+        <PackageReference Include="Google.Protobuf" Version="3.21.9" />
+        <PackageReference Include="Grpc.Core.Api" Version="2.49.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.50.0" PrivateAssets="All" />
+        <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" Condition="'$(TargetFramework)' == 'net5.0-windows'" />
+        <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <Protobuf Include="**/*.proto" Access="Internal" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <None Include="..\LICENSE" Pack="true" PackagePath="\" />
-      <None Include="..\README.md" Pack="true" PackagePath="\" />
+        <None Include="..\LICENSE" Pack="true" PackagePath="\" />
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
 </Project>

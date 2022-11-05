@@ -45,40 +45,38 @@ namespace GrpcDotNetNamedPipes.Internal
         private NamedPipeServerStream CreatePipeServer()
         {
             var pipeOptions = PipeOptions.Asynchronous;
-#if NETCOREAPP || NETSTANDARD
-#if !NETSTANDARD2_0
-            if (_options.CurrentUserOnly)
-            {
-                pipeOptions |= PipeOptions.CurrentUserOnly;
-            }
-#endif
-
-#if NET5_0
-            return NamedPipeServerStreamAcl.Create(_pipeName,
+#if NETFRAMEWORK
+            return new NamedPipeServerStream(_pipeName,
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
-                PipeTransmissionMode.Message,
+                PlatformConfig.TransmissionMode,
                 pipeOptions,
                 0,
                 0,
                 _options.PipeSecurity);
 #else
+#if NET6_0_OR_GREATER
+            if (_options.CurrentUserOnly)
+            {
+                pipeOptions |= PipeOptions.CurrentUserOnly;
+            }
+            if (OperatingSystem.IsWindows())
+            {
+                return NamedPipeServerStreamAcl.Create(_pipeName,
+                    PipeDirection.InOut,
+                    NamedPipeServerStream.MaxAllowedServerInstances,
+                    PlatformConfig.TransmissionMode,
+                    pipeOptions,
+                    0,
+                    0,
+                    _options.PipeSecurity);
+            }
+#endif
             return new NamedPipeServerStream(_pipeName,
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
-                PipeTransmissionMode.Message,
+                PlatformConfig.TransmissionMode,
                 pipeOptions);
-#endif
-#endif
-#if NETFRAMEWORK
-            return new NamedPipeServerStream(_pipeName,
-                PipeDirection.InOut,
-                NamedPipeServerStream.MaxAllowedServerInstances,
-                PipeTransmissionMode.Message,
-                pipeOptions,
-                0,
-                0,
-                _options.PipeSecurity);
 #endif
         }
 
@@ -86,7 +84,8 @@ namespace GrpcDotNetNamedPipes.Internal
         {
             if (_stopped)
             {
-                throw new InvalidOperationException("The server has been killed and can't be restarted. Create a new server if needed.");
+                throw new InvalidOperationException(
+                    "The server has been killed and can't be restarted. Create a new server if needed.");
             }
             if (_started)
             {
@@ -160,11 +159,11 @@ namespace GrpcDotNetNamedPipes.Internal
 
         private void RunHandleConnection(NamedPipeServerStream pipeServer)
         {
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 try
                 {
-                    _handleConnection(pipeServer).Wait();
+                    await _handleConnection(pipeServer);
                     pipeServer.Disconnect();
                 }
                 catch (Exception)

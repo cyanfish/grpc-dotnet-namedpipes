@@ -20,14 +20,14 @@ namespace GrpcDotNetNamedPipes
 {
     public class NamedPipeServerOptions
     {
-#if NETCOREAPP || NETSTANDARD2_1
+#if NET6_0_OR_GREATER
         /// <summary>
         /// Gets or sets a value indicating whether the server pipe can only be connected to a client created by the
         /// same user.
         /// </summary>
         public bool CurrentUserOnly { get; set; }
 #endif
-#if NETFRAMEWORK || NET5_0
+#if NETFRAMEWORK || NET6_0_OR_GREATER
         /// <summary>
         /// Gets or sets a value indicating the access control to be used for the pipe.
         /// </summary>

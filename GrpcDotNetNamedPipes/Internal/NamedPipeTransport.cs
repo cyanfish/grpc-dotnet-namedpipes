@@ -43,14 +43,49 @@ namespace GrpcDotNetNamedPipes.Internal
         private async Task<MemoryStream> ReadPacketFromPipe()
         {
             var packet = new MemoryStream();
+            if (PlatformConfig.SizePrefix)
+            {
+                await ReadPacketWithSizePrefix(packet);
+            }
+            else
+            {
+                await ReadPacketWithMessage(packet);
+            }
+
+            packet.Position = 0;
+            return packet;
+        }
+
+        private async Task ReadPacketWithMessage(MemoryStream packet)
+        {
             do
             {
                 int readBytes = await _pipeStream.ReadAsync(_messageBuffer, 0, MessageBufferSize).ConfigureAwait(false);
                 packet.Write(_messageBuffer, 0, readBytes);
             } while (!_pipeStream.IsMessageComplete);
+        }
 
-            packet.Position = 0;
-            return packet;
+        private async Task ReadPacketWithSizePrefix(MemoryStream packet)
+        {
+            int bytesToRead = await ReadSizePrefix();
+            do
+            {
+                var bytesToReadIntoBuffer = Math.Min(bytesToRead, MessageBufferSize);
+                int readBytes = await _pipeStream.ReadAsync(_messageBuffer, 0, bytesToReadIntoBuffer)
+                    .ConfigureAwait(false);
+                packet.Write(_messageBuffer, 0, readBytes);
+                bytesToRead -= readBytes;
+            } while (bytesToRead > 0);
+        }
+
+        private async Task<int> ReadSizePrefix()
+        {
+            int readBytes = await _pipeStream.ReadAsync(_messageBuffer, 0, 4).ConfigureAwait(false);
+            if (readBytes != 4)
+            {
+                throw new InvalidOperationException("Unexpected size prefix");
+            }
+            return BitConverter.ToInt32(_messageBuffer, 0);
         }
 
         public async Task Read(TransportMessageHandler messageHandler)
@@ -152,6 +187,7 @@ namespace GrpcDotNetNamedPipes.Internal
                 {
                     if (_packetBuffer.Length > 0)
                     {
+                        _pipeStream.Write(BitConverter.GetBytes(_packetBuffer.Length), 0, 4);
                         _packetBuffer.WriteTo(_pipeStream);
                     }
 
@@ -237,7 +273,9 @@ namespace GrpcDotNetNamedPipes.Internal
 
             public WriteTransaction Payload(byte[] payload)
             {
-                if (payload.Length > PayloadInSeparatePacketThreshold)
+                // TODO: Why doesn't this work on Unix?
+                if (payload.Length > PayloadInSeparatePacketThreshold &&
+                    Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
                     // For large payloads, writing the payload outside the packet saves extra copying. 
                     AddMessage(new TransportMessage

@@ -62,7 +62,7 @@ namespace GrpcDotNetNamedPipes.Internal
             }
 
             _pipeStream.Connect(_connectionTimeout);
-            _pipeStream.ReadMode = PipeTransmissionMode.Message;
+            _pipeStream.ReadMode = PlatformConfig.TransmissionMode;
 
             if (request != null)
             {

@@ -21,7 +21,7 @@ namespace GrpcDotNetNamedPipes
 {
     public class NamedPipeChannelOptions
     {
-#if NETCOREAPP || NETSTANDARD2_1
+#if NET6_0_OR_GREATER
         /// <summary>
         /// Gets or sets a value indicating whether the client pipe can only connect to a server created by the same
         /// user.
@@ -37,6 +37,6 @@ namespace GrpcDotNetNamedPipes
         /// <summary>
         /// Gets or sets a value indicating the number of milliseconds to wait for the server to respond before the connection times out.
         /// </summary>
-        public int ConnectionTimeout { get; set; } = Timeout.Infinite;
+        public int ConnectionTimeout { get; set; } = 30 * 1000;
     }
 }
