@@ -530,7 +530,9 @@ namespace GrpcDotNetNamedPipes.Tests
         [ClassData(typeof(NamedPipeClassData))]
         public void SimpleUnaryWithACLs(NamedPipeChannelContextFactory factory)
         {
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT) return;
+#if NET6_0_OR_GREATER
+            if (!OperatingSystem.IsWindows()) return;
+#endif
             PipeSecurity security = new PipeSecurity();
             SecurityIdentifier sid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
             security.AddAccessRule(new PipeAccessRule(sid, PipeAccessRights.ReadWrite, AccessControlType.Allow));
@@ -548,7 +550,9 @@ namespace GrpcDotNetNamedPipes.Tests
         [ClassData(typeof(NamedPipeClassData))]
         public void SimpleUnaryWithACLsDenied(NamedPipeChannelContextFactory factory)
         {
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT) return;
+#if NET6_0_OR_GREATER
+            if (!OperatingSystem.IsWindows()) return;
+#endif
             PipeSecurity security = new PipeSecurity();
             SecurityIdentifier sid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
             security.AddAccessRule(new PipeAccessRule(sid, PipeAccessRights.ReadWrite, AccessControlType.Allow));
