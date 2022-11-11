@@ -36,11 +36,18 @@ namespace GrpcDotNetNamedPipes
 
         public NamedPipeServer(string pipeName, NamedPipeServerOptions options)
         {
-            _pool = new ServerStreamPool(pipeName, options, HandleConnection);
+            _pool = new ServerStreamPool(pipeName, options, HandleConnection, InvokeError);
             ServiceBinder = new ServiceBinderImpl(this);
         }
 
         public ServiceBinderBase ServiceBinder { get; }
+
+        public event EventHandler<NamedPipeErrorEventArgs> Error;
+
+        private void InvokeError(Exception error)
+        {
+            Error?.Invoke(this, new NamedPipeErrorEventArgs(error));
+        }
 
         public void Start()
         {

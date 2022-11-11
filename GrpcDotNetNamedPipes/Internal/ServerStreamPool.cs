@@ -31,15 +31,17 @@ namespace GrpcDotNetNamedPipes.Internal
         private readonly string _pipeName;
         private readonly NamedPipeServerOptions _options;
         private readonly Func<NamedPipeServerStream, Task> _handleConnection;
+        private readonly Action<Exception> _invokeError;
         private bool _started;
         private bool _stopped;
 
         public ServerStreamPool(string pipeName, NamedPipeServerOptions options,
-            Func<NamedPipeServerStream, Task> handleConnection)
+            Func<NamedPipeServerStream, Task> handleConnection, Action<Exception> invokeError)
         {
             _pipeName = pipeName;
             _options = options;
             _handleConnection = handleConnection;
+            _invokeError = invokeError;
         }
 
         private NamedPipeServerStream CreatePipeServer()
@@ -116,13 +118,13 @@ namespace GrpcDotNetNamedPipes.Internal
                     ListenForConnection();
                     fallback = FallbackMin;
                 }
-                catch (Exception)
+                catch (Exception error)
                 {
                     if (_cts.IsCancellationRequested)
                     {
                         break;
                     }
-                    // TODO: Log
+                    _invokeError(error);
                     Thread.Sleep(fallback);
                     fallback = Math.Min(fallback * 2, FallbackMax);
                 }
@@ -166,9 +168,9 @@ namespace GrpcDotNetNamedPipes.Internal
                     await _handleConnection(pipeServer);
                     pipeServer.Disconnect();
                 }
-                catch (Exception)
+                catch (Exception error)
                 {
-                    // TODO: Log
+                    _invokeError(error);
                 }
                 finally
                 {
@@ -184,9 +186,9 @@ namespace GrpcDotNetNamedPipes.Internal
             {
                 _cts.Cancel();
             }
-            catch (Exception)
+            catch (Exception error)
             {
-                // TODO: Log
+                _invokeError(error);
             }
         }
     }
