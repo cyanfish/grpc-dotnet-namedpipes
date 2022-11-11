@@ -29,6 +29,7 @@ namespace GrpcDotNetNamedPipes.Internal
         private CancellationTokenRegistration _cancelReg;
         private Exception _error;
         private bool _completed;
+        private bool _terminated;
 
         public void AppendPayload(byte[] payload)
         {
@@ -54,6 +55,7 @@ namespace GrpcDotNetNamedPipes.Internal
         {
             lock (this)
             {
+                _terminated = true;
                 _completed = true;
                 if (_tcs != null)
                 {
@@ -67,6 +69,7 @@ namespace GrpcDotNetNamedPipes.Internal
         {
             lock (this)
             {
+                _terminated = true;
                 _error = ex;
                 if (_tcs != null)
                 {
@@ -80,6 +83,7 @@ namespace GrpcDotNetNamedPipes.Internal
         {
             lock (this)
             {
+                _terminated = true;
                 if (_tcs != null)
                 {
                     _tcs.SetCanceled();
@@ -126,5 +130,14 @@ namespace GrpcDotNetNamedPipes.Internal
         }
 
         public byte[] Current { get; private set; }
+
+        public void Dispose()
+        {
+            if (!_terminated)
+            {
+                // Unexpected pipe termination
+                SetError(new RpcException(new Status(StatusCode.Unavailable, "failed to connect to all addresses")));
+            }
+        }
     }
 }

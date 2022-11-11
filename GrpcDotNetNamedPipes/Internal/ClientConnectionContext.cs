@@ -164,6 +164,7 @@ namespace GrpcDotNetNamedPipes.Internal
 
         public void Dispose()
         {
+            _payloadQueue.Dispose();
             _pipeStream.Dispose();
             _cancelReg.Dispose();
         }

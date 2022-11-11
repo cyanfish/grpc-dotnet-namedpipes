@@ -25,16 +25,19 @@ namespace GrpcDotNetNamedPipes.Internal
         private readonly PipeStream _pipeStream;
         private readonly TransportMessageHandler _messageHandler;
         private readonly Action _onDisconnected;
+        private readonly Action<Exception> _onError;
         private readonly NamedPipeTransport _transport;
 
-        public PipeReader(PipeStream pipeStream, TransportMessageHandler messageHandler, Action onDisconnected)
+        public PipeReader(PipeStream pipeStream, TransportMessageHandler messageHandler, Action onDisconnected,
+            Action<Exception> onError = null)
         {
             _pipeStream = pipeStream;
             _messageHandler = messageHandler;
             _onDisconnected = onDisconnected;
+            _onError = onError;
             _transport = new NamedPipeTransport(_pipeStream);
         }
-        
+
         public async Task ReadLoop()
         {
             try
@@ -44,9 +47,12 @@ namespace GrpcDotNetNamedPipes.Internal
                     await _transport.Read(_messageHandler).ConfigureAwait(false);
                 }
             }
-            catch (Exception)
+            catch (EndOfPipeException)
             {
-                // TODO: Log if unexpected
+            }
+            catch (Exception error)
+            {
+                _onError?.Invoke(error);
             }
             finally
             {

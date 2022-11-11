@@ -67,7 +67,7 @@ namespace GrpcDotNetNamedPipes
         private async Task HandleConnection(NamedPipeServerStream pipeStream)
         {
             var ctx = new ServerConnectionContext(pipeStream, _methodHandlers);
-            await Task.Run(new PipeReader(pipeStream, ctx, ctx.Dispose).ReadLoop);
+            await Task.Run(new PipeReader(pipeStream, ctx, ctx.Dispose, InvokeError).ReadLoop);
         }
 
         private class ServiceBinderImpl : ServiceBinderBase

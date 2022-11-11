@@ -469,19 +469,17 @@ namespace GrpcDotNetNamedPipes.Tests
             }
         }
 
-        // TODO: Fix this test for net6/mac/linux
-#if !NET6_0_OR_GREATER
         [Theory]
         [ClassData(typeof(NamedPipeClassData))]
-        public void CallImmediatelyAfterKillingServer(NamedPipeChannelContextFactory factory)
+        public async Task CallImmediatelyAfterKillingServer(NamedPipeChannelContextFactory factory)
         {
             using var ctx = factory.Create();
             ctx.Dispose();
-            var exception = Assert.Throws<RpcException>(() => ctx.Client.SimpleUnary(new RequestMessage { Value = 10 }));
+            var exception = await Assert.ThrowsAsync<RpcException>(
+                async () => await ctx.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 }));
             Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
             Assert.Equal("failed to connect to all addresses", exception.Status.Detail);
         }
-#endif
 
         [Theory]
         [ClassData(typeof(MultiChannelClassData))]

@@ -73,6 +73,10 @@ namespace GrpcDotNetNamedPipes.Internal
                 var bytesToReadIntoBuffer = Math.Min(bytesToRead, MessageBufferSize);
                 int readBytes = await _pipeStream.ReadAsync(_messageBuffer, 0, bytesToReadIntoBuffer)
                     .ConfigureAwait(false);
+                if (readBytes == 0)
+                {
+                    throw new EndOfPipeException();
+                }
                 packet.Write(_messageBuffer, 0, readBytes);
                 bytesToRead -= readBytes;
             } while (bytesToRead > 0);
@@ -81,6 +85,10 @@ namespace GrpcDotNetNamedPipes.Internal
         private async Task<int> ReadSizePrefix()
         {
             int readBytes = await _pipeStream.ReadAsync(_messageBuffer, 0, 4).ConfigureAwait(false);
+            if (readBytes == 0)
+            {
+                throw new EndOfPipeException();
+            }
             if (readBytes != 4)
             {
                 throw new InvalidOperationException("Unexpected size prefix");
