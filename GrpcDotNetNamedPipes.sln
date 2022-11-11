@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcDotNetNamedPipes", "Grp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcDotNetNamedPipes.Tests", "GrpcDotNetNamedPipes.Tests\GrpcDotNetNamedPipes.Tests.csproj", "{D7566E69-DA28-4997-9C4F-E0C0F8DD3F13}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcDotNetNamedPipes.PerfTests", "GrpcDotNetNamedPipes.PerfTests\GrpcDotNetNamedPipes.PerfTests.csproj", "{688ADBBA-FEDD-48C4-A05C-BB1E1BF8DB84}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{D7566E69-DA28-4997-9C4F-E0C0F8DD3F13}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7566E69-DA28-4997-9C4F-E0C0F8DD3F13}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7566E69-DA28-4997-9C4F-E0C0F8DD3F13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{688ADBBA-FEDD-48C4-A05C-BB1E1BF8DB84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{688ADBBA-FEDD-48C4-A05C-BB1E1BF8DB84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{688ADBBA-FEDD-48C4-A05C-BB1E1BF8DB84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{688ADBBA-FEDD-48C4-A05C-BB1E1BF8DB84}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
