@@ -45,6 +45,8 @@ Compared with gRPC over HTTP (using [grpc](https://github.com/grpc/grpc) or [grp
 - No firewall warnings
 - No network adapter required
 
+**Update:** As of 2022 grpc-dotnet supports [Unix domain sockets](https://docs.microsoft.com/en-us/aspnet/core/grpc/interprocess?view=aspnetcore-6.0) which, if you're using Windows 10+, has some of the same benefits as named pipes (e.g. no firewall warnings) and is suitable for many use cases. However, it still requires the full ASP.NET Core.
+
 ## Caveats
 
 This implementation currently uses a custom wire protocol so it won't be compatible with other gRPC named pipe implementations.
