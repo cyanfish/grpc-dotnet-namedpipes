@@ -49,3 +49,4 @@ Compared with gRPC over HTTP (using [grpc](https://github.com/grpc/grpc) or [grp
 
 This implementation currently uses a custom wire protocol so it won't be compatible with other gRPC named pipe implementations.
 
+Linux and macOS support is provided for universal compatibility but may not be as optimized as Windows.

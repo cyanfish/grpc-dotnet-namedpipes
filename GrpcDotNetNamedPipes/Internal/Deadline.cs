@@ -19,7 +19,7 @@ using System.Threading;
 
 namespace GrpcDotNetNamedPipes.Internal
 {
-    public class Deadline
+    internal class Deadline
     {
         private readonly DateTime? _deadline;
         private readonly CancellationTokenSource _cts;

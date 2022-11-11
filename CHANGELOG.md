@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0
+- Add macOS and Linux support
+- Change build targets to: net462, net6, netstandard2.0
+- Bump assembly version
+- Set a default connection timeout of 30s (instead of unlimited)
+- Add NamedPipeServer.Error event for previously unlogged errors
+
 ## 1.4.4
 - Add strong naming to the assembly
 

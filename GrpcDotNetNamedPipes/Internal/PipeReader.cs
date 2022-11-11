@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace GrpcDotNetNamedPipes.Internal
 {
-    public class PipeReader
+    internal class PipeReader
     {
         private readonly PipeStream _pipeStream;
         private readonly TransportMessageHandler _messageHandler;
