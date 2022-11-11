@@ -27,7 +27,7 @@ namespace GrpcDotNetNamedPipes
         /// </summary>
         public bool CurrentUserOnly { get; set; }
 #endif
-#if NETFRAMEWORK || NET5_0
+#if NETFRAMEWORK || NET5_0_OR_GREATER
         /// <summary>
         /// Gets or sets a value indicating the access control to be used for the pipe.
         /// </summary>

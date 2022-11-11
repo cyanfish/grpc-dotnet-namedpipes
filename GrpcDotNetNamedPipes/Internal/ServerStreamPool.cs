@@ -53,7 +53,7 @@ namespace GrpcDotNetNamedPipes.Internal
             }
 #endif
 
-#if NET5_0
+#if NET5_0_OR_GREATER
             return NamedPipeServerStreamAcl.Create(_pipeName,
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
