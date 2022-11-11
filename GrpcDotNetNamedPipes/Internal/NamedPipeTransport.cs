@@ -187,7 +187,10 @@ namespace GrpcDotNetNamedPipes.Internal
                 {
                     if (_packetBuffer.Length > 0)
                     {
-                        _pipeStream.Write(BitConverter.GetBytes(_packetBuffer.Length), 0, 4);
+                        if (PlatformConfig.SizePrefix)
+                        {
+                            _pipeStream.Write(BitConverter.GetBytes(_packetBuffer.Length), 0, 4);
+                        }
                         _packetBuffer.WriteTo(_pipeStream);
                     }
 
