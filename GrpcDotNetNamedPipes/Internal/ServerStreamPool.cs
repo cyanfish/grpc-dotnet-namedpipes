@@ -104,18 +104,17 @@ namespace GrpcDotNetNamedPipes.Internal
 
         private void StartListenThread()
         {
-            var thread = new Thread(ConnectionLoop);
-            thread.Start();
+            var _ = ConnectionLoop();
         }
 
-        private void ConnectionLoop()
+        private async Task ConnectionLoop()
         {
             int fallback = FallbackMin;
             while (true)
             {
                 try
                 {
-                    ListenForConnection();
+                    await ListenForConnection().ConfigureAwait(false);
                     fallback = FallbackMin;
                 }
                 catch (Exception error)
@@ -125,24 +124,26 @@ namespace GrpcDotNetNamedPipes.Internal
                         break;
                     }
                     _invokeError(error);
-                    Thread.Sleep(fallback);
+                    await Task.Delay(fallback).ConfigureAwait(false);
                     fallback = Math.Min(fallback * 2, FallbackMax);
                 }
             }
         }
 
-        private void ListenForConnection()
+        private async Task ListenForConnection()
         {
             var pipeServer = CreatePipeServer();
-            WaitForConnection(pipeServer);
+
+            await WaitForConnection(pipeServer).ConfigureAwait(false);
+
             RunHandleConnection(pipeServer);
         }
 
-        private void WaitForConnection(NamedPipeServerStream pipeServer)
+        private async Task WaitForConnection(NamedPipeServerStream pipeServer)
         {
             try
             {
-                pipeServer.WaitForConnectionAsync(_cts.Token).Wait();
+                await pipeServer.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
             }
             catch (Exception)
             {
