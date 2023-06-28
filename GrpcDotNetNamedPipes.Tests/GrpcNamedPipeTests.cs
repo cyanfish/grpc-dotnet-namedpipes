@@ -104,6 +104,18 @@ namespace GrpcDotNetNamedPipes.Tests
 
         [Theory]
         [ClassData(typeof(MultiChannelClassData))]
+        public async Task ThrowingUnaryWithTrailers(ChannelContextFactory factory)
+        {
+            using var ctx = factory.Create();
+            var responseTask = ctx.Client.ThrowingUnaryWithTrailersAsync(new RequestMessage { Value = 10 });
+            var exception = await Assert.ThrowsAsync<RpcException>(async () => await responseTask);
+            Assert.Equal(StatusCode.Unknown, exception.StatusCode);
+            Assert.Equal("test value", exception.Trailers.Get("test-key").Value);
+            Assert.Equal("Exception was thrown by handler.", exception.Status.Detail);
+        }
+
+        [Theory]
+        [ClassData(typeof(MultiChannelClassData))]
         public async Task ThrowCanceledExceptionUnary(ChannelContextFactory factory)
         {
             using var ctx = factory.Create();

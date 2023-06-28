@@ -22,6 +22,7 @@ service TestService {
     rpc SimpleUnary (RequestMessage) returns (ResponseMessage) {}
     rpc DelayedUnary (RequestMessage) returns (ResponseMessage) {}
     rpc ThrowingUnary (RequestMessage) returns (ResponseMessage) {}
+    rpc ThrowingUnaryWithTrailers (RequestMessage) returns (ResponseMessage) {}
     rpc DelayedThrowingUnary (RequestMessage) returns (ResponseMessage) {}
     rpc ClientStreaming (stream RequestMessage) returns (ResponseMessage) {}
     rpc ServerStreaming (RequestMessage) returns (stream ResponseMessage) {}

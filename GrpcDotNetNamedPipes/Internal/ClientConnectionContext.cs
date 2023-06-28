@@ -108,7 +108,7 @@ namespace GrpcDotNetNamedPipes.Internal
             }
             else
             {
-                _payloadQueue.SetError(new RpcException(status));
+                _payloadQueue.SetError(new RpcException(status, _responseTrailers));
             }
         }
 
