@@ -13,9 +13,11 @@ Named pipe transport for [gRPC](https://grpc.io/) in C#/.NET.
 
 ## Usage
 
-Suppose you have a Greeter service as described in the [gRPC on .NET Core](https://docs.microsoft.com/en-us/aspnet/core/grpc/) intro.
+Suppose you have a Greeter service as described in
+the [gRPC on .NET Core](https://docs.microsoft.com/en-us/aspnet/core/grpc/) intro.
 
 Server:
+
 ```
 var server = new NamedPipeServer("MY_PIPE_NAME");
 Greeter.BindService(server.ServiceBinder, new GreeterService());
@@ -23,6 +25,7 @@ server.Start();
 ```
 
 Client:
+
 ```
 var channel = new NamedPipeChannel(".", "MY_PIPE_NAME");
 var client = new Greeter.GreeterClient(channel);
@@ -37,18 +40,33 @@ Console.WriteLine(response.Message);
 
 Named pipes are suitable for inter-process communication (IPC).
 
-Compared with gRPC over HTTP (using [grpc](https://github.com/grpc/grpc) or [grpc-dotnet](https://github.com/grpc/grpc-dotnet)), you get:
-- Better access controls (e.g. current user only)
-- Lightweight pure .NET library (instead of 3MB+ native DLL or ASP.NET Core dependency)
-- Much faster startup time
-- 2x-3x faster large message throughput
-- No firewall warnings
-- No network adapter required
+Since the introduction of this project, ASP.NET Core has added support for gRPC
+over [Unix Domain Sockets](https://learn.microsoft.com/en-us/aspnet/core/grpc/interprocess-uds?view=aspnetcore-8.0) and
+over [Named Pipes](https://learn.microsoft.com/en-us/aspnet/core/grpc/interprocess-namedpipes?view=aspnetcore-8.0). Here
+is a handy matrix to help you decide what's right for you:
 
-**Update:** As of 2022 grpc-dotnet supports [Unix domain sockets](https://docs.microsoft.com/en-us/aspnet/core/grpc/interprocess?view=aspnetcore-6.0) which, if you're using Windows 10+, has some of the same benefits as named pipes (e.g. no firewall warnings) and is suitable for many use cases. However, it still requires the full ASP.NET Core.
+|                            | GrpcDotNetNamedPipes           | ASP.NET UDS                | ASP.NET Named Pipes                | ASP.NET HTTP              |
+|----------------------------|--------------------------------|----------------------------|------------------------------------|---------------------------|
+| .NET Platform              | .NET Framework 4.6.2<br>.NET 5 | .NET 5                     | .NET 8 (server)<br>.NET 5 (client) | .NET 5                    |
+| OS                         | Windows 7<br>Mac<br>Linux      | Windows 10<br>Mac<br>Linux | Windows 7                          | Windows 7<br>Mac<br>Linux |
+| Dependencies               | None                           | ASP.NET (server)           | ASP.NET (server)                   | ASP.NET (server)          |
+| No firewall warnings       | :heavy_check_mark:             | :heavy_check_mark:         | :heavy_check_mark:                 | :x:                       |
+| No network adapter         | :heavy_check_mark:             | :heavy_check_mark:         | :heavy_check_mark:                 | :x:                       |
+| Access controls            | :heavy_check_mark:             | :x:                        | :heavy_check_mark:                 | :x:                       |
+| Startup time               | < 25ms                         | < 25ms                     | < 25ms                             | ~ 250ms                   |
+| Large message throughput   | ~ 500MB/s                      | ~ 400MB/s                  | ~ 100MB/s                          | ~ 100MB/s                 |
+| Streaming messages         | ~ 50k/s                        | ~ 500k/s                   | ~ 500k/s                           | ~ 100k/s                  |
+| Method calls               | ~ 8000/s                       | ~ 4000/s                   | ~ 5000/s                           | ~ 2500/s                  |
+| Compatible with gRPC-Go    | :x:                            | :x:                        | :heavy_check_mark:                 | :heavy_check_mark:        |
+| Official Microsoft support | :x:                            | :heavy_check_mark:         | :heavy_check_mark:                 | :heavy_check_mark:        |
+
+Performance numbers are based
+on [tests](https://github.com/cyanfish/grpc-dotnet-namedpipes/blob/master/GrpcDotNetNamedPipes.PerfTests/GrpcPerformanceTests.cs)
+running on Windows 11 with .NET 8.
 
 ## Caveats
 
-This implementation currently uses a custom wire protocol so it won't be compatible with other gRPC named pipe implementations.
+This implementation currently uses a custom wire protocol so it won't be compatible with other gRPC named pipe
+implementations.
 
 Linux and macOS support is provided for universal compatibility but may not be as optimized as Windows.
