@@ -18,12 +18,13 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
+using GrpcDotNetNamedPipes.PerfTests.Helpers;
 using GrpcDotNetNamedPipes.Tests.Generated;
 using GrpcDotNetNamedPipes.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace GrpcDotNetNamedPipes.Tests
+namespace GrpcDotNetNamedPipes.PerfTests
 {
     public class GrpcPerformanceTests
     {
@@ -35,7 +36,7 @@ namespace GrpcDotNetNamedPipes.Tests
         }
 
         [Theory]
-        [ClassData(typeof(MultiChannelClassData))]
+        [ClassData(typeof(MultiChannelWithAspNetClassData))]
         public async Task ServerStreamingManyMessagesPerformance(ChannelContextFactory factory)
         {
             using var ctx = factory.Create();
@@ -50,7 +51,7 @@ namespace GrpcDotNetNamedPipes.Tests
         }
 
         [Theory]
-        [ClassData(typeof(MultiChannelClassData))]
+        [ClassData(typeof(MultiChannelWithAspNetClassData))]
         public void UnarySequentialChannelsPerformance(ChannelContextFactory factory)
         {
             using var ctx = factory.Create();
@@ -66,7 +67,7 @@ namespace GrpcDotNetNamedPipes.Tests
         }
 
         [Theory]
-        [ClassData(typeof(MultiChannelClassData))]
+        [ClassData(typeof(MultiChannelWithAspNetClassData))]
         public async Task UnaryParallelChannelsPerformance(ChannelContextFactory factory)
         {
             using var ctx = factory.Create();
@@ -84,7 +85,7 @@ namespace GrpcDotNetNamedPipes.Tests
         }
 
         [Theory]
-        [ClassData(typeof(MultiChannelClassData))]
+        [ClassData(typeof(MultiChannelWithAspNetClassData))]
         public void UnarySequentialCallsPerformance(ChannelContextFactory factory)
         {
             using var ctx = factory.Create();
@@ -99,7 +100,7 @@ namespace GrpcDotNetNamedPipes.Tests
         }
 
         [Theory]
-        [ClassData(typeof(MultiChannelClassData))]
+        [ClassData(typeof(MultiChannelWithAspNetClassData))]
         public async Task UnaryParallelCallsPerformance(ChannelContextFactory factory)
         {
             using var ctx = factory.Create();
@@ -116,7 +117,7 @@ namespace GrpcDotNetNamedPipes.Tests
         }
 
         [Theory]
-        [ClassData(typeof(MultiChannelClassData))]
+        [ClassData(typeof(MultiChannelWithAspNetClassData))]
         public void UnaryLargePayloadPerformance(ChannelContextFactory factory)
         {
             using var ctx = factory.Create();
@@ -129,7 +130,7 @@ namespace GrpcDotNetNamedPipes.Tests
         }
 
         [Theory]
-        [ClassData(typeof(MultiChannelClassData))]
+        [ClassData(typeof(MultiChannelWithAspNetClassData))]
         public void ChannelColdStartPerformance(ChannelContextFactory factory)
         {
             // Note: This test needs to be run on its own for accurate cold start measurements.
@@ -141,7 +142,7 @@ namespace GrpcDotNetNamedPipes.Tests
         }
 
         [Theory]
-        [ClassData(typeof(MultiChannelClassData))]
+        [ClassData(typeof(MultiChannelWithAspNetClassData))]
         public void ChannelWarmStartPerformance(ChannelContextFactory factory)
         {
             using var tempChannel = factory.Create();

@@ -44,6 +44,7 @@ namespace GrpcDotNetNamedPipes.Internal
             }
 
             var payload = SerializationHelpers.Serialize(_marshaller, message);
+            // TODO: Potential for 4x streaming message throughput by queueing up messages and sending multiple at a time
             Stream.Write().Payload(payload).Commit();
             return Task.CompletedTask;
         }
