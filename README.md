@@ -49,15 +49,15 @@ is a handy matrix to help you decide what's right for you:
 |----------------------------|--------------------------------|----------------------------|------------------------------------|---------------------------|
 | .NET Platform              | .NET Framework 4.6.2<br>.NET 5 | .NET 5                     | .NET 8 (server)<br>.NET 5 (client) | .NET 5                    |
 | OS                         | Windows 7<br>Mac<br>Linux      | Windows 10<br>Mac<br>Linux | Windows 7                          | Windows 7<br>Mac<br>Linux |
-| Dependencies               | None                           | ASP.NET (server)           | ASP.NET (server)                   | ASP.NET (server)          |
 | No firewall warnings       | :heavy_check_mark:             | :heavy_check_mark:         | :heavy_check_mark:                 | :x:                       |
 | No network adapter         | :heavy_check_mark:             | :heavy_check_mark:         | :heavy_check_mark:                 | :x:                       |
 | Access controls            | :heavy_check_mark:             | :x:                        | :heavy_check_mark:                 | :x:                       |
+| Binary size (trimmed)      | ~ 300 KB                       | ~ 7 MB                     | ~ 7 MB                             | ~ 7 MB                    |
 | Startup time               | < 25ms                         | < 25ms                     | < 25ms                             | ~ 250ms                   |
 | Large message throughput   | ~ 500MB/s                      | ~ 400MB/s                  | ~ 100MB/s                          | ~ 100MB/s                 |
 | Streaming messages         | ~ 50k/s                        | ~ 500k/s                   | ~ 500k/s                           | ~ 100k/s                  |
 | Method calls               | ~ 8000/s                       | ~ 4000/s                   | ~ 5000/s                           | ~ 2500/s                  |
-| Compatible with gRPC-Go    | :x:                            | :x:                        | :heavy_check_mark:                 | :heavy_check_mark:        |
+| Compatible with gRPC-Go    | :x:                            | :heavy_check_mark:         | :heavy_check_mark:                 | :heavy_check_mark:        |
 | Official Microsoft support | :x:                            | :heavy_check_mark:         | :heavy_check_mark:                 | :heavy_check_mark:        |
 
 Performance numbers are based
