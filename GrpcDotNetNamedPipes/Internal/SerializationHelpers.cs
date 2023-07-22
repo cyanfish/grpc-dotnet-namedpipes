@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-using Grpc.Core;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal static class SerializationHelpers
 {
-    internal static class SerializationHelpers
+    public static byte[] Serialize<T>(Marshaller<T> marshaller, T message)
     {
-        public static byte[] Serialize<T>(Marshaller<T> marshaller, T message)
-        {
-            var serializationContext = new ByteArraySerializationContext();
-            marshaller.ContextualSerializer(message, serializationContext);
-            return serializationContext.SerializedData;
-        }
-        
-        public static T Deserialize<T>(Marshaller<T> marshaller, byte[] payload)
-        {
-            var deserializationContext = new ByteArrayDeserializationContext(payload);
-            return marshaller.ContextualDeserializer(deserializationContext);
-        }
+        var serializationContext = new ByteArraySerializationContext();
+        marshaller.ContextualSerializer(message, serializationContext);
+        return serializationContext.SerializedData;
+    }
+
+    public static T Deserialize<T>(Marshaller<T> marshaller, byte[] payload)
+    {
+        var deserializationContext = new ByteArrayDeserializationContext(payload);
+        return marshaller.ContextualDeserializer(deserializationContext);
     }
 }

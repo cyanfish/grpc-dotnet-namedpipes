@@ -14,34 +14,30 @@
  * limitations under the License.
  */
 
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using GrpcDotNetNamedPipes.Tests.Helpers;
 
-namespace GrpcDotNetNamedPipes.PerfTests.Helpers
+namespace GrpcDotNetNamedPipes.PerfTests.Helpers;
+
+public class MultiChannelWithAspNetClassData : IEnumerable<object[]>
 {
-    public class MultiChannelWithAspNetClassData : IEnumerable<object[]>
+    public IEnumerator<object[]> GetEnumerator()
     {
-        public IEnumerator<object[]> GetEnumerator()
-        {
-            yield return new object[] { new NamedPipeChannelContextFactory() };
+        yield return new object[] { new NamedPipeChannelContextFactory() };
 #if NET6_0_OR_GREATER
-            if (RuntimeInformation.OSArchitecture == Architecture.Arm64 && !OperatingSystem.IsLinux())
-            {
-                // No grpc implementation available for comparison
-                yield break;
-            }
-            yield return new object[] { new AspNetHttpContextFactory() };
-            yield return new object[] { new AspNetUdsContextFactory() };
+        if (RuntimeInformation.OSArchitecture == Architecture.Arm64 && !OperatingSystem.IsLinux())
+        {
+            // No grpc implementation available for comparison
+            yield break;
+        }
+        yield return new object[] { new AspNetHttpContextFactory() };
+        yield return new object[] { new AspNetUdsContextFactory() };
 #endif
 #if NET8_0_OR_GREATER
-            yield return new object[] { new AspNetPipeContextFactory() };
+        yield return new object[] { new AspNetPipeContextFactory() };
 #endif
-            yield return new object[] { new HttpChannelContextFactory() };
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        yield return new object[] { new HttpChannelContextFactory() };
     }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

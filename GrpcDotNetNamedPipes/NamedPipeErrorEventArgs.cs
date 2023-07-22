@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-using System;
+namespace GrpcDotNetNamedPipes;
 
-namespace GrpcDotNetNamedPipes
+public class NamedPipeErrorEventArgs : EventArgs
 {
-    public class NamedPipeErrorEventArgs : EventArgs
-    {
-        public Exception Error { get; }
+    public Exception Error { get; }
 
-        public NamedPipeErrorEventArgs(Exception error)
-        {
-            Error = error;
-        }
+    public NamedPipeErrorEventArgs(Exception error)
+    {
+        Error = error;
     }
 }

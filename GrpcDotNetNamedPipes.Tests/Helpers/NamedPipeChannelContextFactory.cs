@@ -14,46 +14,43 @@
  * limitations under the License.
  */
 
-using System;
-using GrpcDotNetNamedPipes.Tests.Generated;
+namespace GrpcDotNetNamedPipes.Tests.Helpers;
 
-namespace GrpcDotNetNamedPipes.Tests.Helpers
+public class NamedPipeChannelContextFactory : ChannelContextFactory
 {
-    public class NamedPipeChannelContextFactory : ChannelContextFactory
+    private readonly string _pipeName = $"{Guid.NewGuid().ToString().Replace("-", "")}";
+    private const int _connectionTimeout = 100;
+
+    public ChannelContext Create(NamedPipeServerOptions options)
     {
-        private readonly string _pipeName = $"{Guid.NewGuid().ToString().Replace("-", "")}";
-        private const int _connectionTimeout = 100;
-            
-        public ChannelContext Create(NamedPipeServerOptions options)
+        var impl = new TestServiceImpl();
+        var server = new NamedPipeServer(_pipeName, options);
+        TestService.BindService(server.ServiceBinder, impl);
+        server.Start();
+        return new ChannelContext
         {
-            var impl = new TestServiceImpl();
-            var server = new NamedPipeServer(_pipeName, options);
-            TestService.BindService(server.ServiceBinder, impl);
-            server.Start();
-            return new ChannelContext
-            {
-                Impl = impl,
-                Client = CreateClient(),
-                OnDispose = () => server.Kill()
-            };
-        }
+            Impl = impl,
+            Client = CreateClient(),
+            OnDispose = () => server.Kill()
+        };
+    }
 
-        public override ChannelContext Create()
-        {
-            return Create(new NamedPipeServerOptions());
-        }
+    public override ChannelContext Create()
+    {
+        return Create(new NamedPipeServerOptions());
+    }
 
-        public override TestService.TestServiceClient CreateClient()
-        {
-            var channel = new NamedPipeChannel(".", _pipeName, new NamedPipeChannelOptions{ ConnectionTimeout = _connectionTimeout });
-            return new TestService.TestServiceClient(channel);
-        }
+    public override TestService.TestServiceClient CreateClient()
+    {
+        var channel = new NamedPipeChannel(".", _pipeName,
+            new NamedPipeChannelOptions { ConnectionTimeout = _connectionTimeout });
+        return new TestService.TestServiceClient(channel);
+    }
 
-        public NamedPipeServer CreateServer() => new NamedPipeServer(_pipeName, new NamedPipeServerOptions());
+    public NamedPipeServer CreateServer() => new NamedPipeServer(_pipeName, new NamedPipeServerOptions());
 
-        public override string ToString()
-        {
-            return "pipe";
-        }
+    public override string ToString()
+    {
+        return "pipe";
     }
 }

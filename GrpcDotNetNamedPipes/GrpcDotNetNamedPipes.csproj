@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net462;netstandard2.0;net6</TargetFrameworks>
-        <LangVersion>8</LangVersion>
+        <LangVersion>11</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
         <Version>2.0.0</Version>
@@ -30,6 +30,21 @@
         <PackageReference Include="Grpc.Tools" Version="2.50.0" PrivateAssets="All" />
         <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" Condition="'$(TargetFramework)' == 'net5.0-windows'" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="System" />
+        <Using Include="System.Buffers" />
+        <Using Include="System.Collections.Generic" />
+        <Using Include="System.Diagnostics" />
+        <Using Include="System.IO" />
+        <Using Include="System.IO.Pipes" />
+        <Using Include="System.Linq" />
+        <Using Include="System.Threading" />
+        <Using Include="System.Threading.Tasks" />
+        <Using Include="Grpc.Core" />
+        <Using Include="GrpcDotNetNamedPipes.Generated" />
+        <Using Include="GrpcDotNetNamedPipes.Internal" />
     </ItemGroup>
 
     <ItemGroup>

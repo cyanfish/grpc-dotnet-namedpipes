@@ -15,12 +15,8 @@
  */
 
 #if NET6_0_OR_GREATER
-using System.Linq;
 using System.Net.Http;
 using Grpc.Net.Client;
-using GrpcDotNetNamedPipes.Tests;
-using GrpcDotNetNamedPipes.Tests.Generated;
-using GrpcDotNetNamedPipes.Tests.Helpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -29,53 +25,52 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace GrpcDotNetNamedPipes.PerfTests.Helpers
+namespace GrpcDotNetNamedPipes.PerfTests.Helpers;
+
+public class AspNetHttpContextFactory : ChannelContextFactory
 {
-    public class AspNetHttpContextFactory : ChannelContextFactory
+    private int _port;
+
+    public override ChannelContext Create()
     {
-        private int _port;
-
-        public override ChannelContext Create()
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddGrpc(opts => opts.MaxReceiveMessageSize = int.MaxValue);
+        builder.WebHost.UseUrls("https://127.0.0.1:0");
+        builder.WebHost.ConfigureKestrel(opts =>
         {
-            var builder = WebApplication.CreateBuilder();
-            builder.Services.AddGrpc(opts => opts.MaxReceiveMessageSize = int.MaxValue);
-            builder.WebHost.UseUrls("https://127.0.0.1:0");
-            builder.WebHost.ConfigureKestrel(opts =>
-            {
-                opts.Limits.MaxRequestBodySize = int.MaxValue;
-                opts.ConfigureEndpointDefaults(c => c.Protocols = HttpProtocols.Http2);
-            });
-            var app = builder.Build();
-            app.MapGrpcService<TestServiceImpl>();
-            app.Start();
-            var server = app.Services.GetRequiredService<IServer>();
-            var addressFeature = server.Features.Get<IServerAddressesFeature>();
-            foreach (var address in addressFeature.Addresses)
-            {
-                _port = int.Parse(address.Split(":").Last());
-            }
-
-            return new ChannelContext
-            {
-                Impl = new TestServiceImpl(), // TODO: Match instance
-                Client = CreateClient(),
-                OnDispose = () => app.StopAsync()
-            };
+            opts.Limits.MaxRequestBodySize = int.MaxValue;
+            opts.ConfigureEndpointDefaults(c => c.Protocols = HttpProtocols.Http2);
+        });
+        var app = builder.Build();
+        app.MapGrpcService<TestServiceImpl>();
+        app.Start();
+        var server = app.Services.GetRequiredService<IServer>();
+        var addressFeature = server.Features.Get<IServerAddressesFeature>();
+        foreach (var address in addressFeature.Addresses)
+        {
+            _port = int.Parse(address.Split(":").Last());
         }
 
-        public override TestService.TestServiceClient CreateClient()
+        return new ChannelContext
         {
-            var httpHandler = new HttpClientHandler();
-            httpHandler.ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-            return new TestService.TestServiceClient(GrpcChannel.ForAddress($"https://127.0.0.1:{_port}",
-                new GrpcChannelOptions { HttpHandler = httpHandler, MaxReceiveMessageSize = int.MaxValue }));
-        }
+            Impl = new TestServiceImpl(), // TODO: Match instance
+            Client = CreateClient(),
+            OnDispose = () => app.StopAsync()
+        };
+    }
 
-        public override string ToString()
-        {
-            return "aspnet-http";
-        }
+    public override TestService.TestServiceClient CreateClient()
+    {
+        var httpHandler = new HttpClientHandler();
+        httpHandler.ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return new TestService.TestServiceClient(GrpcChannel.ForAddress($"https://127.0.0.1:{_port}",
+            new GrpcChannelOptions { HttpHandler = httpHandler, MaxReceiveMessageSize = int.MaxValue }));
+    }
+
+    public override string ToString()
+    {
+        return "aspnet-http";
     }
 }
 #endif

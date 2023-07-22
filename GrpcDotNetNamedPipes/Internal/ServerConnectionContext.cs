@@ -14,119 +14,112 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO.Pipes;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 {
-    internal class ServerConnectionContext : TransportMessageHandler, IDisposable
+    private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers;
+    private readonly PayloadQueue _payloadQueue;
+
+    public ServerConnectionContext(NamedPipeServerStream pipeStream,
+        Dictionary<string, Func<ServerConnectionContext, Task>> methodHandlers)
     {
-        private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers;
-        private readonly PayloadQueue _payloadQueue;
+        CallContext = new NamedPipeCallContext(this);
+        PipeStream = pipeStream;
+        Transport = new NamedPipeTransport(pipeStream);
+        _methodHandlers = methodHandlers;
+        _payloadQueue = new PayloadQueue();
+        CancellationTokenSource = new CancellationTokenSource();
+    }
 
-        public ServerConnectionContext(NamedPipeServerStream pipeStream,
-            Dictionary<string, Func<ServerConnectionContext, Task>> methodHandlers)
+    public NamedPipeServerStream PipeStream { get; }
+
+    public NamedPipeTransport Transport { get; }
+
+    public CancellationTokenSource CancellationTokenSource { get; }
+
+    public Deadline Deadline { get; private set; }
+
+    public Metadata RequestHeaders { get; private set; }
+
+    public ServerCallContext CallContext { get; }
+
+    public bool IsCompleted { get; private set; }
+
+    public MessageReader<TRequest> GetMessageReader<TRequest>(Marshaller<TRequest> requestMarshaller)
+    {
+        return new MessageReader<TRequest>(_payloadQueue, requestMarshaller, CancellationToken.None, Deadline);
+    }
+
+    public IServerStreamWriter<TResponse> CreateResponseStream<TResponse>(Marshaller<TResponse> responseMarshaller)
+    {
+        return new ResponseStreamWriterImpl<TResponse>(Transport, CancellationToken.None, responseMarshaller,
+            () => IsCompleted);
+    }
+
+    public override void HandleRequestInit(string methodFullName, DateTime? deadline)
+    {
+        Deadline = new Deadline(deadline);
+        Task.Run(async () => await _methodHandlers[methodFullName](this).ConfigureAwait(false));
+    }
+
+    public override void HandleHeaders(Metadata headers) => RequestHeaders = headers;
+
+    public override void HandleCancel() => CancellationTokenSource.Cancel();
+
+    public override void HandleStreamEnd() => _payloadQueue.SetCompleted();
+
+    public override void HandlePayload(byte[] payload) => _payloadQueue.AppendPayload(payload);
+
+    public void Error(Exception ex)
+    {
+        IsCompleted = true;
+        if (Deadline != null && Deadline.IsExpired)
         {
-            CallContext = new NamedPipeCallContext(this);
-            PipeStream = pipeStream;
-            Transport = new NamedPipeTransport(pipeStream);
-            _methodHandlers = methodHandlers;
-            _payloadQueue = new PayloadQueue();
-            CancellationTokenSource = new CancellationTokenSource();
+            WriteTrailers(StatusCode.DeadlineExceeded, "");
         }
-
-        public NamedPipeServerStream PipeStream { get; }
-
-        public NamedPipeTransport Transport { get; }
-
-        public CancellationTokenSource CancellationTokenSource { get; }
-
-        public Deadline Deadline { get; private set; }
-
-        public Metadata RequestHeaders { get; private set; }
-
-        public ServerCallContext CallContext { get; }
-        
-        public bool IsCompleted { get; private set; }
-
-        public MessageReader<TRequest> GetMessageReader<TRequest>(Marshaller<TRequest> requestMarshaller)
+        else if (CancellationTokenSource.IsCancellationRequested)
         {
-            return new MessageReader<TRequest>(_payloadQueue, requestMarshaller, CancellationToken.None, Deadline);
+            WriteTrailers(StatusCode.Cancelled, "");
         }
-
-        public IServerStreamWriter<TResponse> CreateResponseStream<TResponse>(Marshaller<TResponse> responseMarshaller)
+        else if (ex is RpcException rpcException)
         {
-            return new ResponseStreamWriterImpl<TResponse>(Transport, CancellationToken.None, responseMarshaller, () => IsCompleted);
+            WriteTrailers(rpcException.StatusCode, rpcException.Status.Detail);
         }
-
-        public override void HandleRequestInit(string methodFullName, DateTime? deadline)
+        else
         {
-            Deadline = new Deadline(deadline);
-            Task.Run(async () => await _methodHandlers[methodFullName](this).ConfigureAwait(false));
+            WriteTrailers(StatusCode.Unknown, "Exception was thrown by handler.");
         }
+    }
 
-        public override void HandleHeaders(Metadata headers) => RequestHeaders = headers;
-        
-        public override void HandleCancel() => CancellationTokenSource.Cancel();
-        
-        public override void HandleStreamEnd() => _payloadQueue.SetCompleted();
-        
-        public override void HandlePayload(byte[] payload) => _payloadQueue.AppendPayload(payload);
-
-        public void Error(Exception ex)
+    public void Success(byte[] responsePayload = null)
+    {
+        IsCompleted = true;
+        if (CallContext.Status.StatusCode != StatusCode.OK)
         {
-            IsCompleted = true;
-            if (Deadline != null && Deadline.IsExpired)
-            {
-                WriteTrailers(StatusCode.DeadlineExceeded, "");
-            }
-            else if (CancellationTokenSource.IsCancellationRequested)
-            {
-                WriteTrailers(StatusCode.Cancelled, "");
-            }
-            else if (ex is RpcException rpcException)
-            {
-                WriteTrailers(rpcException.StatusCode, rpcException.Status.Detail);
-            }
-            else
-            {
-                WriteTrailers(StatusCode.Unknown, "Exception was thrown by handler.");
-            }
+            WriteTrailers(CallContext.Status.StatusCode, CallContext.Status.Detail);
         }
-
-        public void Success(byte[] responsePayload = null)
+        else if (responsePayload != null)
         {
-            IsCompleted = true;
-            if (CallContext.Status.StatusCode != StatusCode.OK)
-            {
-                WriteTrailers(CallContext.Status.StatusCode, CallContext.Status.Detail);
-            }
-            else if (responsePayload != null)
-            {
-                Transport.Write()
-                    .Payload(responsePayload)
-                    .Trailers(StatusCode.OK, "", CallContext.ResponseTrailers)
-                    .Commit();
-            }
-            else
-            {
-                WriteTrailers(StatusCode.OK, "");
-            }
+            Transport.Write()
+                .Payload(responsePayload)
+                .Trailers(StatusCode.OK, "", CallContext.ResponseTrailers)
+                .Commit();
         }
-
-        private void WriteTrailers(StatusCode statusCode, string statusDetail)
+        else
         {
-            Transport.Write().Trailers(statusCode, statusDetail, CallContext.ResponseTrailers).Commit();
+            WriteTrailers(StatusCode.OK, "");
         }
+    }
 
-        public void Dispose()
-        {
-            _payloadQueue.Dispose();
-            PipeStream?.Dispose();
-        }
+    private void WriteTrailers(StatusCode statusCode, string statusDetail)
+    {
+        Transport.Write().Trailers(statusCode, statusDetail, CallContext.ResponseTrailers).Commit();
+    }
+
+    public void Dispose()
+    {
+        _payloadQueue.Dispose();
+        PipeStream?.Dispose();
     }
 }

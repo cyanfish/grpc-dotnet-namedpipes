@@ -15,28 +15,26 @@
  */
 
 using System.Security.Principal;
-using System.Threading;
 
-namespace GrpcDotNetNamedPipes
+namespace GrpcDotNetNamedPipes;
+
+public class NamedPipeChannelOptions
 {
-    public class NamedPipeChannelOptions
-    {
 #if NET6_0_OR_GREATER
-        /// <summary>
-        /// Gets or sets a value indicating whether the client pipe can only connect to a server created by the same
-        /// user.
-        /// </summary>
-        public bool CurrentUserOnly { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether the client pipe can only connect to a server created by the same
+    /// user.
+    /// </summary>
+    public bool CurrentUserOnly { get; set; }
 #endif
 
-        /// <summary>
-        /// Gets or sets a value indicating the security impersonation level.
-        /// </summary>
-        public TokenImpersonationLevel ImpersonationLevel { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating the security impersonation level.
+    /// </summary>
+    public TokenImpersonationLevel ImpersonationLevel { get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating the number of milliseconds to wait for the server to respond before the connection times out.
-        /// </summary>
-        public int ConnectionTimeout { get; set; } = 30 * 1000;
-    }
+    /// <summary>
+    /// Gets or sets a value indicating the number of milliseconds to wait for the server to respond before the connection times out.
+    /// </summary>
+    public int ConnectionTimeout { get; set; } = 30 * 1000;
 }

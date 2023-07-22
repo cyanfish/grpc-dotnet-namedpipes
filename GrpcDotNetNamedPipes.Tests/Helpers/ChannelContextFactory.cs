@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-using GrpcDotNetNamedPipes.Tests.Generated;
+namespace GrpcDotNetNamedPipes.Tests.Helpers;
 
-namespace GrpcDotNetNamedPipes.Tests.Helpers
+public abstract class ChannelContextFactory
 {
-    public abstract class ChannelContextFactory
-    {
-        public abstract ChannelContext Create();
-        public abstract TestService.TestServiceClient CreateClient();
-    }
+    public abstract ChannelContext Create();
+    public abstract TestService.TestServiceClient CreateClient();
 }

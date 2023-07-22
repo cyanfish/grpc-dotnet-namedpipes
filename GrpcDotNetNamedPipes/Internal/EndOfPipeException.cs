@@ -1,8 +1,5 @@
-using System;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class EndOfPipeException : Exception
 {
-    internal class EndOfPipeException : Exception
-    {
-    }
 }

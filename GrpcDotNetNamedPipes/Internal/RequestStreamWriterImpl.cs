@@ -14,36 +14,31 @@
  * limitations under the License.
  */
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class RequestStreamWriterImpl<T> : StreamWriterImpl<T>, IClientStreamWriter<T>
 {
-    internal class RequestStreamWriterImpl<T> : StreamWriterImpl<T>, IClientStreamWriter<T>
+    private bool _isCompleted;
+
+    public RequestStreamWriterImpl(NamedPipeTransport stream, CancellationToken cancellationToken,
+        Marshaller<T> marshaller)
+        : base(stream, cancellationToken, marshaller)
     {
-        private bool _isCompleted;
+    }
 
-        public RequestStreamWriterImpl(NamedPipeTransport stream, CancellationToken cancellationToken, Marshaller<T> marshaller)
-         : base(stream, cancellationToken, marshaller)
+    public override Task WriteAsync(T message)
+    {
+        if (_isCompleted)
         {
+            throw new InvalidOperationException($"Request stream has already been completed.");
         }
+        return base.WriteAsync(message);
+    }
 
-        public override Task WriteAsync(T message)
-        {
-            if (_isCompleted)
-            {
-                throw new InvalidOperationException($"Request stream has already been completed.");
-            }
-            return base.WriteAsync(message);
-        }
-        
-        public Task CompleteAsync()
-        {
-            Stream.Write().RequestStreamEnd().Commit();
-            _isCompleted = true;
-            return Task.CompletedTask;
-        }
+    public Task CompleteAsync()
+    {
+        Stream.Write().RequestStreamEnd().Commit();
+        _isCompleted = true;
+        return Task.CompletedTask;
     }
 }

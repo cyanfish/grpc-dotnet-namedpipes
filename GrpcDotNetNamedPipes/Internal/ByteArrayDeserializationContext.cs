@@ -14,25 +14,20 @@
  * limitations under the License.
  */
 
-using System.Buffers;
-using System.Linq;
-using Grpc.Core;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class ByteArrayDeserializationContext : DeserializationContext
 {
-    internal class ByteArrayDeserializationContext : DeserializationContext
+    private readonly byte[] _payload;
+
+    public ByteArrayDeserializationContext(byte[] payload)
     {
-        private readonly byte[] _payload;
-
-        public ByteArrayDeserializationContext(byte[] payload)
-        {
-            _payload = payload;
-        }
-
-        public override int PayloadLength => _payload.Length;
-
-        public override byte[] PayloadAsNewBuffer() => _payload.ToArray();
-
-        public override ReadOnlySequence<byte> PayloadAsReadOnlySequence() => new ReadOnlySequence<byte>(_payload);
+        _payload = payload;
     }
+
+    public override int PayloadLength => _payload.Length;
+
+    public override byte[] PayloadAsNewBuffer() => _payload.ToArray();
+
+    public override ReadOnlySequence<byte> PayloadAsReadOnlySequence() => new ReadOnlySequence<byte>(_payload);
 }

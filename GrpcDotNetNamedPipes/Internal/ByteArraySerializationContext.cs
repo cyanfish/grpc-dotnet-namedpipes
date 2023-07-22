@@ -14,39 +14,33 @@
  * limitations under the License.
  */
 
-using System.Buffers;
-using System.Diagnostics;
-using Grpc.Core;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class ByteArraySerializationContext : SerializationContext
 {
-    internal class ByteArraySerializationContext : SerializationContext
+    private int _payloadLength;
+    private ByteArrayBufferWriter _bufferWriter;
+
+    public override void Complete(byte[] payload)
     {
-        private int _payloadLength;
-        private ByteArrayBufferWriter _bufferWriter;
-        
-        public override void Complete(byte[] payload)
-        {
-            SerializedData = payload;
-        }
-
-        public override IBufferWriter<byte> GetBufferWriter()
-        {
-            return _bufferWriter ??= new ByteArrayBufferWriter(_payloadLength);
-        }
-
-        public override void SetPayloadLength(int payloadLength)
-        {
-            _payloadLength = payloadLength;
-        }
-
-        public override void Complete()
-        {
-            Debug.Assert(_bufferWriter.Buffer.Length == _payloadLength);
-            SerializedData = _bufferWriter.Buffer;
-        }
-        
-        public byte[] SerializedData { get; private set; } 
-        
+        SerializedData = payload;
     }
+
+    public override IBufferWriter<byte> GetBufferWriter()
+    {
+        return _bufferWriter ??= new ByteArrayBufferWriter(_payloadLength);
+    }
+
+    public override void SetPayloadLength(int payloadLength)
+    {
+        _payloadLength = payloadLength;
+    }
+
+    public override void Complete()
+    {
+        Debug.Assert(_bufferWriter.Buffer.Length == _payloadLength);
+        SerializedData = _bufferWriter.Buffer;
+    }
+
+    public byte[] SerializedData { get; private set; }
 }

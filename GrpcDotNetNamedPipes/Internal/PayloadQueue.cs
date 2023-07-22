@@ -14,130 +14,123 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class PayloadQueue : IAsyncStreamReader<byte[]>
 {
-    internal class PayloadQueue : IAsyncStreamReader<byte[]>
+    private readonly Queue<byte[]> _internalQueue = new Queue<byte[]>();
+    private TaskCompletionSource<bool> _tcs;
+    private CancellationTokenRegistration _cancelReg;
+    private Exception _error;
+    private bool _completed;
+    private bool _terminated;
+
+    public void AppendPayload(byte[] payload)
     {
-        private readonly Queue<byte[]> _internalQueue = new Queue<byte[]>();
-        private TaskCompletionSource<bool> _tcs;
-        private CancellationTokenRegistration _cancelReg;
-        private Exception _error;
-        private bool _completed;
-        private bool _terminated;
-
-        public void AppendPayload(byte[] payload)
+        lock (this)
         {
-            lock (this)
+            _internalQueue.Enqueue(payload);
+            if (_tcs != null)
             {
-                _internalQueue.Enqueue(payload);
-                if (_tcs != null)
-                {
-                    Current = _internalQueue.Dequeue();
-                    _tcs.SetResult(true);
-                    ResetTcs();
-                }
+                Current = _internalQueue.Dequeue();
+                _tcs.SetResult(true);
+                ResetTcs();
             }
         }
+    }
 
-        private void ResetTcs()
-        {
-            _cancelReg.Dispose();
-            _tcs = null;
-        }
+    private void ResetTcs()
+    {
+        _cancelReg.Dispose();
+        _tcs = null;
+    }
 
-        public void SetCompleted()
+    public void SetCompleted()
+    {
+        lock (this)
         {
-            lock (this)
+            _terminated = true;
+            _completed = true;
+            if (_tcs != null)
             {
-                _terminated = true;
-                _completed = true;
-                if (_tcs != null)
-                {
-                    _tcs.SetResult(false);
-                    ResetTcs();
-                }
+                _tcs.SetResult(false);
+                ResetTcs();
             }
         }
+    }
 
-        public void SetError(Exception ex)
+    public void SetError(Exception ex)
+    {
+        lock (this)
         {
-            lock (this)
+            _terminated = true;
+            _error = ex;
+            if (_tcs != null)
             {
-                _terminated = true;
-                _error = ex;
-                if (_tcs != null)
-                {
-                    _tcs.SetException(_error);
-                    ResetTcs();
-                }
+                _tcs.SetException(_error);
+                ResetTcs();
             }
         }
+    }
 
-        public void SetCanceled()
+    public void SetCanceled()
+    {
+        lock (this)
         {
-            lock (this)
+            _terminated = true;
+            if (_tcs != null)
             {
-                _terminated = true;
-                if (_tcs != null)
-                {
-                    _tcs.SetCanceled();
-                    ResetTcs();
-                }
+                _tcs.SetCanceled();
+                ResetTcs();
             }
         }
+    }
 
-        public Task<bool> MoveNext(CancellationToken cancellationToken)
+    public Task<bool> MoveNext(CancellationToken cancellationToken)
+    {
+        lock (this)
         {
-            lock (this)
+            if (_tcs != null)
             {
-                if (_tcs != null)
-                {
-                    throw new InvalidOperationException("Overlapping MoveNext calls");
-                }
-
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return Task.FromCanceled<bool>(cancellationToken);
-                }
-
-                if (_internalQueue.Count > 0)
-                {
-                    Current = _internalQueue.Dequeue();
-                    return Task.FromResult(true);
-                }
-
-                if (_error != null)
-                {
-                    throw _error;
-                }
-
-                if (_completed)
-                {
-                    return Task.FromResult(false);
-                }
-
-                _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                var task = _tcs.Task;
-                _cancelReg = cancellationToken.Register(SetCanceled);
-                return task;
+                throw new InvalidOperationException("Overlapping MoveNext calls");
             }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.FromCanceled<bool>(cancellationToken);
+            }
+
+            if (_internalQueue.Count > 0)
+            {
+                Current = _internalQueue.Dequeue();
+                return Task.FromResult(true);
+            }
+
+            if (_error != null)
+            {
+                throw _error;
+            }
+
+            if (_completed)
+            {
+                return Task.FromResult(false);
+            }
+
+            _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var task = _tcs.Task;
+            _cancelReg = cancellationToken.Register(SetCanceled);
+            return task;
         }
+    }
 
-        public byte[] Current { get; private set; }
+    public byte[] Current { get; private set; }
 
-        public void Dispose()
+    public void Dispose()
+    {
+        if (!_terminated)
         {
-            if (!_terminated)
-            {
-                // Unexpected pipe termination
-                SetError(new RpcException(new Status(StatusCode.Unavailable, "failed to connect to all addresses")));
-            }
+            // Unexpected pipe termination
+            SetError(new RpcException(new Status(StatusCode.Unavailable, "failed to connect to all addresses")));
         }
     }
 }

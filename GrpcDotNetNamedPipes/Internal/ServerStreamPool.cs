@@ -14,48 +14,43 @@
  * limitations under the License.
  */
 
-using System;
-using System.IO.Pipes;
-using System.Threading;
-using System.Threading.Tasks;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class ServerStreamPool : IDisposable
 {
-    internal class ServerStreamPool : IDisposable
+    private const int PoolSize = 4;
+    private const int FallbackMin = 100;
+    private const int FallbackMax = 10_000;
+
+    private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+    private readonly string _pipeName;
+    private readonly NamedPipeServerOptions _options;
+    private readonly Func<NamedPipeServerStream, Task> _handleConnection;
+    private readonly Action<Exception> _invokeError;
+    private bool _started;
+    private bool _stopped;
+
+    public ServerStreamPool(string pipeName, NamedPipeServerOptions options,
+        Func<NamedPipeServerStream, Task> handleConnection, Action<Exception> invokeError)
     {
-        private const int PoolSize = 4;
-        private const int FallbackMin = 100;
-        private const int FallbackMax = 10_000;
+        _pipeName = pipeName;
+        _options = options;
+        _handleConnection = handleConnection;
+        _invokeError = invokeError;
+    }
 
-        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
-        private readonly string _pipeName;
-        private readonly NamedPipeServerOptions _options;
-        private readonly Func<NamedPipeServerStream, Task> _handleConnection;
-        private readonly Action<Exception> _invokeError;
-        private bool _started;
-        private bool _stopped;
-
-        public ServerStreamPool(string pipeName, NamedPipeServerOptions options,
-            Func<NamedPipeServerStream, Task> handleConnection, Action<Exception> invokeError)
-        {
-            _pipeName = pipeName;
-            _options = options;
-            _handleConnection = handleConnection;
-            _invokeError = invokeError;
-        }
-
-        private NamedPipeServerStream CreatePipeServer()
-        {
-            var pipeOptions = PipeOptions.Asynchronous;
+    private NamedPipeServerStream CreatePipeServer()
+    {
+        var pipeOptions = PipeOptions.Asynchronous;
 #if NETFRAMEWORK
-            return new NamedPipeServerStream(_pipeName,
-                PipeDirection.InOut,
-                NamedPipeServerStream.MaxAllowedServerInstances,
-                PlatformConfig.TransmissionMode,
-                pipeOptions,
-                0,
-                0,
-                _options.PipeSecurity);
+        return new NamedPipeServerStream(_pipeName,
+            PipeDirection.InOut,
+            NamedPipeServerStream.MaxAllowedServerInstances,
+            PlatformConfig.TransmissionMode,
+            pipeOptions,
+            0,
+            0,
+            _options.PipeSecurity);
 #else
 #if NET6_0_OR_GREATER
             if (_options.CurrentUserOnly)
@@ -80,116 +75,115 @@ namespace GrpcDotNetNamedPipes.Internal
                 PlatformConfig.TransmissionMode,
                 pipeOptions);
 #endif
-        }
+    }
 
-        public void Start()
+    public void Start()
+    {
+        if (_stopped)
         {
-            if (_stopped)
-            {
-                throw new InvalidOperationException(
-                    "The server has been killed and can't be restarted. Create a new server if needed.");
-            }
-            if (_started)
-            {
-                return;
-            }
-
-            for (int i = 0; i < PoolSize; i++)
-            {
-                StartListenThread();
-            }
-
-            _started = true;
+            throw new InvalidOperationException(
+                "The server has been killed and can't be restarted. Create a new server if needed.");
         }
-
-        private void StartListenThread()
+        if (_started)
         {
-            var thread = new Thread(ConnectionLoop);
-            thread.Start();
+            return;
         }
 
-        private void ConnectionLoop()
+        for (int i = 0; i < PoolSize; i++)
         {
-            int fallback = FallbackMin;
-            while (true)
-            {
-                try
-                {
-                    ListenForConnection();
-                    fallback = FallbackMin;
-                }
-                catch (Exception error)
-                {
-                    if (_cts.IsCancellationRequested)
-                    {
-                        break;
-                    }
-                    _invokeError(error);
-                    Thread.Sleep(fallback);
-                    fallback = Math.Min(fallback * 2, FallbackMax);
-                }
-            }
+            StartListenThread();
         }
 
-        private void ListenForConnection()
-        {
-            var pipeServer = CreatePipeServer();
-            WaitForConnection(pipeServer);
-            RunHandleConnection(pipeServer);
-        }
+        _started = true;
+    }
 
-        private void WaitForConnection(NamedPipeServerStream pipeServer)
+    private void StartListenThread()
+    {
+        var thread = new Thread(ConnectionLoop);
+        thread.Start();
+    }
+
+    private void ConnectionLoop()
+    {
+        int fallback = FallbackMin;
+        while (true)
         {
             try
             {
-                pipeServer.WaitForConnectionAsync(_cts.Token).Wait();
+                ListenForConnection();
+                fallback = FallbackMin;
+            }
+            catch (Exception error)
+            {
+                if (_cts.IsCancellationRequested)
+                {
+                    break;
+                }
+                _invokeError(error);
+                Thread.Sleep(fallback);
+                fallback = Math.Min(fallback * 2, FallbackMax);
+            }
+        }
+    }
+
+    private void ListenForConnection()
+    {
+        var pipeServer = CreatePipeServer();
+        WaitForConnection(pipeServer);
+        RunHandleConnection(pipeServer);
+    }
+
+    private void WaitForConnection(NamedPipeServerStream pipeServer)
+    {
+        try
+        {
+            pipeServer.WaitForConnectionAsync(_cts.Token).Wait();
+        }
+        catch (Exception)
+        {
+            try
+            {
+                pipeServer.Disconnect();
             }
             catch (Exception)
             {
-                try
-                {
-                    pipeServer.Disconnect();
-                }
-                catch (Exception)
-                {
-                    // Ignore disconnection errors
-                }
-                pipeServer.Dispose();
-                throw;
+                // Ignore disconnection errors
             }
+            pipeServer.Dispose();
+            throw;
         }
+    }
 
-        private void RunHandleConnection(NamedPipeServerStream pipeServer)
+    private void RunHandleConnection(NamedPipeServerStream pipeServer)
+    {
+        Task.Run(async () =>
         {
-            Task.Run(async () =>
-            {
-                try
-                {
-                    await _handleConnection(pipeServer);
-                    pipeServer.Disconnect();
-                }
-                catch (Exception error)
-                {
-                    _invokeError(error);
-                }
-                finally
-                {
-                    pipeServer.Dispose();
-                }
-            });
-        }
-
-        public void Dispose()
-        {
-            _stopped = true;
             try
             {
-                _cts.Cancel();
+                await _handleConnection(pipeServer);
+                pipeServer.Disconnect();
             }
             catch (Exception error)
             {
                 _invokeError(error);
             }
+            finally
+            {
+                pipeServer.Dispose();
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        _stopped = true;
+        try
+        {
+            _cts.Cancel();
+        }
+        catch (Exception error)
+        {
+            _invokeError(error);
         }
     }
 }

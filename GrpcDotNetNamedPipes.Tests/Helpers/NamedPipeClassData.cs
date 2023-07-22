@@ -15,17 +15,15 @@
  */
 
 using System.Collections;
-using System.Collections.Generic;
 
-namespace GrpcDotNetNamedPipes.Tests.Helpers
+namespace GrpcDotNetNamedPipes.Tests.Helpers;
+
+class NamedPipeClassData : IEnumerable<object[]>
 {
-    class NamedPipeClassData : IEnumerable<object[]>
+    public IEnumerator<object[]> GetEnumerator()
     {
-        public IEnumerator<object[]> GetEnumerator()
-        {
-            yield return new object[] { new NamedPipeChannelContextFactory() };
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        yield return new object[] { new NamedPipeChannelContextFactory() };
     }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

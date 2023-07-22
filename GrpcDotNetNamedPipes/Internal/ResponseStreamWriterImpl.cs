@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class ResponseStreamWriterImpl<T> : StreamWriterImpl<T>, IServerStreamWriter<T>
 {
-    internal class ResponseStreamWriterImpl<T> : StreamWriterImpl<T>, IServerStreamWriter<T>
+    private readonly Func<bool> _isCompleted;
+
+    public ResponseStreamWriterImpl(NamedPipeTransport stream, CancellationToken cancellationToken,
+        Marshaller<T> marshaller, Func<bool> isCompleted)
+        : base(stream, cancellationToken, marshaller)
     {
-        private readonly Func<bool> _isCompleted;
+        _isCompleted = isCompleted;
+    }
 
-        public ResponseStreamWriterImpl(NamedPipeTransport stream, CancellationToken cancellationToken, Marshaller<T> marshaller, Func<bool> isCompleted)
-         : base(stream, cancellationToken, marshaller)
+    public override Task WriteAsync(T message)
+    {
+        if (_isCompleted())
         {
-            _isCompleted = isCompleted;
+            throw new InvalidOperationException($"Response stream has already been completed.");
         }
-
-        public override Task WriteAsync(T message)
-        {
-            if (_isCompleted())
-            {
-                throw new InvalidOperationException($"Response stream has already been completed.");
-            }
-            return base.WriteAsync(message);
-        }
+        return base.WriteAsync(message);
     }
 }

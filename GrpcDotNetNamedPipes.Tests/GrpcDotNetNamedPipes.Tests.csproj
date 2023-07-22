@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net6;net462</TargetFrameworks>
         <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net6</TargetFrameworks>
-        <LangVersion>8</LangVersion>
+        <LangVersion>11</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,7 +22,25 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\GrpcDotNetNamedPipes\GrpcDotNetNamedPipes.csproj" />
+        <ProjectReference Include="..\GrpcDotNetNamedPipes\GrpcDotNetNamedPipes.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="System" />
+        <Using Include="System.Buffers" />
+        <Using Include="System.Collections.Generic" />
+        <Using Include="System.Diagnostics" />
+        <Using Include="System.IO" />
+        <Using Include="System.IO.Pipes" />
+        <Using Include="System.Linq" />
+        <Using Include="System.Threading" />
+        <Using Include="System.Threading.Tasks" />
+        <Using Include="Grpc.Core" />
+        <Using Include="GrpcDotNetNamedPipes.Tests" />
+        <Using Include="GrpcDotNetNamedPipes.Tests.Generated" />
+        <Using Include="GrpcDotNetNamedPipes.Tests.Helpers" />
+        <Using Include="Xunit" />
+        <Using Include="Xunit.Abstractions" />
     </ItemGroup>
 
 </Project>

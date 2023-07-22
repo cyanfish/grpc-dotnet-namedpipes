@@ -14,150 +14,142 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO.Pipes;
-using System.Threading.Tasks;
-using Grpc.Core;
-using GrpcDotNetNamedPipes.Internal;
+namespace GrpcDotNetNamedPipes;
 
-namespace GrpcDotNetNamedPipes
+public class NamedPipeServer : IDisposable
 {
-    public class NamedPipeServer : IDisposable
+    private readonly ServerStreamPool _pool;
+    private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers =
+        new Dictionary<string, Func<ServerConnectionContext, Task>>();
+
+    public NamedPipeServer(string pipeName)
+        : this(pipeName, new NamedPipeServerOptions())
     {
-        private readonly ServerStreamPool _pool;
-        private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers =
-            new Dictionary<string, Func<ServerConnectionContext, Task>>();
+    }
 
-        public NamedPipeServer(string pipeName)
-            : this(pipeName, new NamedPipeServerOptions())
+    public NamedPipeServer(string pipeName, NamedPipeServerOptions options)
+    {
+        _pool = new ServerStreamPool(pipeName, options, HandleConnection, InvokeError);
+        ServiceBinder = new ServiceBinderImpl(this);
+    }
+
+    public ServiceBinderBase ServiceBinder { get; }
+
+    public event EventHandler<NamedPipeErrorEventArgs> Error;
+
+    private void InvokeError(Exception error)
+    {
+        Error?.Invoke(this, new NamedPipeErrorEventArgs(error));
+    }
+
+    public void Start()
+    {
+        _pool.Start();
+    }
+
+    public void Kill()
+    {
+        _pool.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _pool.Dispose();
+    }
+
+    private async Task HandleConnection(NamedPipeServerStream pipeStream)
+    {
+        var ctx = new ServerConnectionContext(pipeStream, _methodHandlers);
+        await Task.Run(new PipeReader(pipeStream, ctx, ctx.Dispose, InvokeError).ReadLoop);
+    }
+
+    private class ServiceBinderImpl : ServiceBinderBase
+    {
+        private readonly NamedPipeServer _server;
+
+        public ServiceBinderImpl(NamedPipeServer server)
         {
+            _server = server;
         }
 
-        public NamedPipeServer(string pipeName, NamedPipeServerOptions options)
+        public override void AddMethod<TRequest, TResponse>(Method<TRequest, TResponse> method,
+            UnaryServerMethod<TRequest, TResponse> handler)
         {
-            _pool = new ServerStreamPool(pipeName, options, HandleConnection, InvokeError);
-            ServiceBinder = new ServiceBinderImpl(this);
-        }
-
-        public ServiceBinderBase ServiceBinder { get; }
-
-        public event EventHandler<NamedPipeErrorEventArgs> Error;
-
-        private void InvokeError(Exception error)
-        {
-            Error?.Invoke(this, new NamedPipeErrorEventArgs(error));
-        }
-
-        public void Start()
-        {
-            _pool.Start();
-        }
-
-        public void Kill()
-        {
-            _pool.Dispose();
-        }
-
-        public void Dispose()
-        {
-            _pool.Dispose();
-        }
-
-        private async Task HandleConnection(NamedPipeServerStream pipeStream)
-        {
-            var ctx = new ServerConnectionContext(pipeStream, _methodHandlers);
-            await Task.Run(new PipeReader(pipeStream, ctx, ctx.Dispose, InvokeError).ReadLoop);
-        }
-
-        private class ServiceBinderImpl : ServiceBinderBase
-        {
-            private readonly NamedPipeServer _server;
-
-            public ServiceBinderImpl(NamedPipeServer server)
+            _server._methodHandlers.Add(method.FullName, async ctx =>
             {
-                _server = server;
-            }
-
-            public override void AddMethod<TRequest, TResponse>(Method<TRequest, TResponse> method,
-                UnaryServerMethod<TRequest, TResponse> handler)
-            {
-                _server._methodHandlers.Add(method.FullName, async ctx =>
+                try
                 {
-                    try
-                    {
-                        var request = await ctx.GetMessageReader(method.RequestMarshaller).ReadNextMessage()
-                            .ConfigureAwait(false);
-                        var response = await handler(request, ctx.CallContext).ConfigureAwait(false);
-                        ctx.Success(SerializationHelpers.Serialize(method.ResponseMarshaller, response));
-                    }
-                    catch (Exception ex)
-                    {
-                        ctx.Error(ex);
-                    }
-                });
-            }
-
-            public override void AddMethod<TRequest, TResponse>(Method<TRequest, TResponse> method,
-                ClientStreamingServerMethod<TRequest, TResponse> handler)
-            {
-                _server._methodHandlers.Add(method.FullName, async ctx =>
+                    var request = await ctx.GetMessageReader(method.RequestMarshaller).ReadNextMessage()
+                        .ConfigureAwait(false);
+                    var response = await handler(request, ctx.CallContext).ConfigureAwait(false);
+                    ctx.Success(SerializationHelpers.Serialize(method.ResponseMarshaller, response));
+                }
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        var response = await handler(
-                            ctx.GetMessageReader(method.RequestMarshaller),
-                            ctx.CallContext).ConfigureAwait(false);
-                        ctx.Success(SerializationHelpers.Serialize(method.ResponseMarshaller, response));
-                    }
-                    catch (Exception ex)
-                    {
-                        ctx.Error(ex);
-                    }
-                });
-            }
+                    ctx.Error(ex);
+                }
+            });
+        }
 
-            public override void AddMethod<TRequest, TResponse>(Method<TRequest, TResponse> method,
-                ServerStreamingServerMethod<TRequest, TResponse> handler)
+        public override void AddMethod<TRequest, TResponse>(Method<TRequest, TResponse> method,
+            ClientStreamingServerMethod<TRequest, TResponse> handler)
+        {
+            _server._methodHandlers.Add(method.FullName, async ctx =>
             {
-                _server._methodHandlers.Add(method.FullName, async ctx =>
+                try
                 {
-                    try
-                    {
-                        var request = await ctx.GetMessageReader(method.RequestMarshaller).ReadNextMessage()
-                            .ConfigureAwait(false);
-                        await handler(
-                            request,
-                            ctx.CreateResponseStream(method.ResponseMarshaller),
-                            ctx.CallContext).ConfigureAwait(false);
-                        ctx.Success();
-                    }
-                    catch (Exception ex)
-                    {
-                        ctx.Error(ex);
-                    }
-                });
-            }
+                    var response = await handler(
+                        ctx.GetMessageReader(method.RequestMarshaller),
+                        ctx.CallContext).ConfigureAwait(false);
+                    ctx.Success(SerializationHelpers.Serialize(method.ResponseMarshaller, response));
+                }
+                catch (Exception ex)
+                {
+                    ctx.Error(ex);
+                }
+            });
+        }
 
-            public override void AddMethod<TRequest, TResponse>(Method<TRequest, TResponse> method,
-                DuplexStreamingServerMethod<TRequest, TResponse> handler)
+        public override void AddMethod<TRequest, TResponse>(Method<TRequest, TResponse> method,
+            ServerStreamingServerMethod<TRequest, TResponse> handler)
+        {
+            _server._methodHandlers.Add(method.FullName, async ctx =>
             {
-                _server._methodHandlers.Add(method.FullName, async ctx =>
+                try
                 {
-                    try
-                    {
-                        await handler(
-                            ctx.GetMessageReader(method.RequestMarshaller),
-                            ctx.CreateResponseStream(method.ResponseMarshaller),
-                            ctx.CallContext).ConfigureAwait(false);
-                        ctx.Success();
-                    }
-                    catch (Exception ex)
-                    {
-                        ctx.Error(ex);
-                    }
-                });
-            }
+                    var request = await ctx.GetMessageReader(method.RequestMarshaller).ReadNextMessage()
+                        .ConfigureAwait(false);
+                    await handler(
+                        request,
+                        ctx.CreateResponseStream(method.ResponseMarshaller),
+                        ctx.CallContext).ConfigureAwait(false);
+                    ctx.Success();
+                }
+                catch (Exception ex)
+                {
+                    ctx.Error(ex);
+                }
+            });
+        }
+
+        public override void AddMethod<TRequest, TResponse>(Method<TRequest, TResponse> method,
+            DuplexStreamingServerMethod<TRequest, TResponse> handler)
+        {
+            _server._methodHandlers.Add(method.FullName, async ctx =>
+            {
+                try
+                {
+                    await handler(
+                        ctx.GetMessageReader(method.RequestMarshaller),
+                        ctx.CreateResponseStream(method.ResponseMarshaller),
+                        ctx.CallContext).ConfigureAwait(false);
+                    ctx.Success();
+                }
+                catch (Exception ex)
+                {
+                    ctx.Error(ex);
+                }
+            });
         }
     }
 }

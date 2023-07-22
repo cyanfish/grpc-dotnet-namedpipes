@@ -14,69 +14,63 @@
  * limitations under the License.
  */
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class MessageReader<TMessage> : IAsyncStreamReader<TMessage>
 {
-    internal class MessageReader<TMessage> : IAsyncStreamReader<TMessage>
+    private readonly PayloadQueue _payloadQueue;
+    private readonly Marshaller<TMessage> _marshaller;
+    private readonly CancellationToken _callCancellationToken;
+    private readonly Deadline _deadline;
+
+    public MessageReader(PayloadQueue payloadQueue, Marshaller<TMessage> marshaller,
+        CancellationToken callCancellationToken, Deadline deadline)
     {
-        private readonly PayloadQueue _payloadQueue;
-        private readonly Marshaller<TMessage> _marshaller;
-        private readonly CancellationToken _callCancellationToken;
-        private readonly Deadline _deadline;
+        _payloadQueue = payloadQueue;
+        _marshaller = marshaller;
+        _callCancellationToken = callCancellationToken;
+        _deadline = deadline;
+    }
 
-        public MessageReader(PayloadQueue payloadQueue, Marshaller<TMessage> marshaller,
-            CancellationToken callCancellationToken, Deadline deadline)
+    public async Task<bool> MoveNext(CancellationToken cancellationToken)
+    {
+        try
         {
-            _payloadQueue = payloadQueue;
-            _marshaller = marshaller;
-            _callCancellationToken = callCancellationToken;
-            _deadline = deadline;
+            var combined =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _callCancellationToken,
+                    _deadline.Token);
+            return await _payloadQueue.MoveNext(combined.Token).ConfigureAwait(false);
         }
-
-        public async Task<bool> MoveNext(CancellationToken cancellationToken)
+        catch (OperationCanceledException)
         {
-            try
+            if (_deadline.IsExpired)
             {
-                var combined =
-                    CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _callCancellationToken,
-                        _deadline.Token);
-                return await _payloadQueue.MoveNext(combined.Token).ConfigureAwait(false);
+                throw new RpcException(new Status(StatusCode.DeadlineExceeded, ""));
             }
-            catch (OperationCanceledException) 
+            else
             {
-                if (_deadline.IsExpired)
-                {
-                    throw new RpcException(new Status(StatusCode.DeadlineExceeded, ""));
-                }
-                else
-                {
-                    throw new RpcException(Status.DefaultCancelled);
-                }
+                throw new RpcException(Status.DefaultCancelled);
             }
         }
+    }
 
-        public TMessage Current => SerializationHelpers.Deserialize(_marshaller, _payloadQueue.Current);
+    public TMessage Current => SerializationHelpers.Deserialize(_marshaller, _payloadQueue.Current);
 
-        public Task<TMessage> ReadNextMessage()
+    public Task<TMessage> ReadNextMessage()
+    {
+        return ReadNextMessage(CancellationToken.None);
+    }
+
+    public Task<TMessage> ReadNextMessage(CancellationToken cancellationToken)
+    {
+        return Task.Run(async () =>
         {
-            return ReadNextMessage(CancellationToken.None);
-        }
-
-        public Task<TMessage> ReadNextMessage(CancellationToken cancellationToken)
-        {
-            return Task.Run(async () =>
+            if (!await MoveNext(cancellationToken).ConfigureAwait(false))
             {
-                if (!await MoveNext(cancellationToken).ConfigureAwait(false))
-                {
-                    throw new InvalidOperationException("Expected payload");
-                }
+                throw new InvalidOperationException("Expected payload");
+            }
 
-                return Current;
-            });
-        }
+            return Current;
+        });
     }
 }

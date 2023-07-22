@@ -14,39 +14,34 @@
  * limitations under the License.
  */
 
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
+namespace GrpcDotNetNamedPipes.Internal;
 
-namespace GrpcDotNetNamedPipes.Internal
+internal class StreamWriterImpl<T> : IAsyncStreamWriter<T>
 {
-    internal class StreamWriterImpl<T> : IAsyncStreamWriter<T>
+    private readonly CancellationToken _cancellationToken;
+    private readonly Marshaller<T> _marshaller;
+
+    public StreamWriterImpl(NamedPipeTransport stream, CancellationToken cancellationToken, Marshaller<T> marshaller)
     {
-        private readonly CancellationToken _cancellationToken;
-        private readonly Marshaller<T> _marshaller;
+        Stream = stream;
+        _cancellationToken = cancellationToken;
+        _marshaller = marshaller;
+    }
 
-        public StreamWriterImpl(NamedPipeTransport stream, CancellationToken cancellationToken, Marshaller<T> marshaller)
+    public WriteOptions WriteOptions { get; set; }
+
+    protected NamedPipeTransport Stream { get; }
+
+    public virtual Task WriteAsync(T message)
+    {
+        if (_cancellationToken.IsCancellationRequested)
         {
-            Stream = stream;
-            _cancellationToken = cancellationToken;
-            _marshaller = marshaller;
+            return Task.FromCanceled(_cancellationToken);
         }
 
-        public WriteOptions WriteOptions { get; set; }
-        
-        protected NamedPipeTransport Stream { get;  }
-
-        public virtual Task WriteAsync(T message)
-        {
-            if (_cancellationToken.IsCancellationRequested)
-            {
-                return Task.FromCanceled(_cancellationToken);
-            }
-
-            var payload = SerializationHelpers.Serialize(_marshaller, message);
-            // TODO: Potential for 4x streaming message throughput by queueing up messages and sending multiple at a time
-            Stream.Write().Payload(payload).Commit();
-            return Task.CompletedTask;
-        }
+        var payload = SerializationHelpers.Serialize(_marshaller, message);
+        // TODO: Potential for 4x streaming message throughput by queueing up messages and sending multiple at a time
+        Stream.Write().Payload(payload).Commit();
+        return Task.CompletedTask;
     }
 }

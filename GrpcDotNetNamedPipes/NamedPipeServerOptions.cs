@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-using System.IO.Pipes;
+namespace GrpcDotNetNamedPipes;
 
-namespace GrpcDotNetNamedPipes
+public class NamedPipeServerOptions
 {
-    public class NamedPipeServerOptions
-    {
 #if NET6_0_OR_GREATER
         /// <summary>
         /// Gets or sets a value indicating whether the server pipe can only be connected to a client created by the
@@ -28,10 +26,9 @@ namespace GrpcDotNetNamedPipes
         public bool CurrentUserOnly { get; set; }
 #endif
 #if NETFRAMEWORK || NET6_0_OR_GREATER
-        /// <summary>
-        /// Gets or sets a value indicating the access control to be used for the pipe.
-        /// </summary>
-        public PipeSecurity PipeSecurity { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating the access control to be used for the pipe.
+    /// </summary>
+    public PipeSecurity PipeSecurity { get; set; }
 #endif
-    }
 }

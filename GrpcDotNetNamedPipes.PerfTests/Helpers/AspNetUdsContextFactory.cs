@@ -15,92 +15,85 @@
  */
 
 #if NET6_0_OR_GREATER
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Net.Client;
-using GrpcDotNetNamedPipes.Tests;
-using GrpcDotNetNamedPipes.Tests.Generated;
-using GrpcDotNetNamedPipes.Tests.Helpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace GrpcDotNetNamedPipes.PerfTests.Helpers
+namespace GrpcDotNetNamedPipes.PerfTests.Helpers;
+
+public class AspNetUdsContextFactory : ChannelContextFactory
 {
-    public class AspNetUdsContextFactory : ChannelContextFactory
+    private string _path;
+
+    public override ChannelContext Create()
     {
-        private string _path;
-
-        public override ChannelContext Create()
+        _path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddGrpc(opts => opts.MaxReceiveMessageSize = int.MaxValue);
+        builder.WebHost.UseUrls("https://127.0.0.1:0");
+        builder.WebHost.ConfigureKestrel(opts =>
         {
-            _path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            var builder = WebApplication.CreateBuilder();
-            builder.Services.AddGrpc(opts => opts.MaxReceiveMessageSize = int.MaxValue);
-            builder.WebHost.UseUrls("https://127.0.0.1:0");
-            builder.WebHost.ConfigureKestrel(opts =>
-            {
-                opts.Limits.MaxRequestBodySize = int.MaxValue;
-                opts.ListenUnixSocket(_path, c => c.Protocols = HttpProtocols.Http2);
-            });
-            var app = builder.Build();
-            app.MapGrpcService<TestServiceImpl>();
-            app.Start();
+            opts.Limits.MaxRequestBodySize = int.MaxValue;
+            opts.ListenUnixSocket(_path, c => c.Protocols = HttpProtocols.Http2);
+        });
+        var app = builder.Build();
+        app.MapGrpcService<TestServiceImpl>();
+        app.Start();
 
-            return new ChannelContext
-            {
-                Impl = new TestServiceImpl(), // TODO: Match instance
-                Client = CreateClient(),
-                OnDispose = () => app.StopAsync()
-            };
+        return new ChannelContext
+        {
+            Impl = new TestServiceImpl(), // TODO: Match instance
+            Client = CreateClient(),
+            OnDispose = () => app.StopAsync()
+        };
+    }
+
+    public override TestService.TestServiceClient CreateClient()
+    {
+        var udsEndPoint = new UnixDomainSocketEndPoint(_path);
+        var connectionFactory = new UnixDomainSocketsConnectionFactory(udsEndPoint);
+        var socketsHttpHandler = new SocketsHttpHandler
+        {
+            ConnectCallback = connectionFactory.ConnectAsync
+        };
+        return new TestService.TestServiceClient(GrpcChannel.ForAddress("http://localhost",
+            new GrpcChannelOptions { HttpHandler = socketsHttpHandler, MaxReceiveMessageSize = int.MaxValue }));
+    }
+
+    public override string ToString()
+    {
+        return "aspnet-uds";
+    }
+
+    private class UnixDomainSocketsConnectionFactory
+    {
+        private readonly EndPoint endPoint;
+
+        public UnixDomainSocketsConnectionFactory(EndPoint endPoint)
+        {
+            this.endPoint = endPoint;
         }
 
-        public override TestService.TestServiceClient CreateClient()
+        public async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext _,
+            CancellationToken cancellationToken = default)
         {
-            var udsEndPoint = new UnixDomainSocketEndPoint(_path);
-            var connectionFactory = new UnixDomainSocketsConnectionFactory(udsEndPoint);
-            var socketsHttpHandler = new SocketsHttpHandler
+            var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+
+            try
             {
-                ConnectCallback = connectionFactory.ConnectAsync
-            };
-            return new TestService.TestServiceClient(GrpcChannel.ForAddress("http://localhost",
-                new GrpcChannelOptions { HttpHandler = socketsHttpHandler, MaxReceiveMessageSize = int.MaxValue }));
-        }
-
-        public override string ToString()
-        {
-            return "aspnet-uds";
-        }
-
-        private class UnixDomainSocketsConnectionFactory
-        {
-            private readonly EndPoint endPoint;
-
-            public UnixDomainSocketsConnectionFactory(EndPoint endPoint)
-            {
-                this.endPoint = endPoint;
+                await socket.ConnectAsync(this.endPoint, cancellationToken).ConfigureAwait(false);
+                return new NetworkStream(socket, true);
             }
-
-            public async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext _,
-                CancellationToken cancellationToken = default)
+            catch
             {
-                var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-
-                try
-                {
-                    await socket.ConnectAsync(this.endPoint, cancellationToken).ConfigureAwait(false);
-                    return new NetworkStream(socket, true);
-                }
-                catch
-                {
-                    socket.Dispose();
-                    throw;
-                }
+                socket.Dispose();
+                throw;
             }
         }
     }

@@ -15,97 +15,88 @@
  */
 
 #if NET8_0_OR_GREATER
-using System;
-using System.IO;
-using System.IO.Pipes;
 using System.Net.Http;
 using System.Security.Principal;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Net.Client;
-using GrpcDotNetNamedPipes.Tests;
-using GrpcDotNetNamedPipes.Tests.Generated;
-using GrpcDotNetNamedPipes.Tests.Helpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace GrpcDotNetNamedPipes.PerfTests.Helpers
+namespace GrpcDotNetNamedPipes.PerfTests.Helpers;
+
+public class AspNetPipeContextFactory : ChannelContextFactory
 {
-    public class AspNetPipeContextFactory : ChannelContextFactory
+    private string _pipe;
+
+    public override ChannelContext Create()
     {
-        private string _pipe;
-
-        public override ChannelContext Create()
+        _pipe = $"pipe/{Guid.NewGuid()}";
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddGrpc(opts => opts.MaxReceiveMessageSize = int.MaxValue);
+        builder.WebHost.UseUrls("https://127.0.0.1:0");
+        builder.WebHost.ConfigureKestrel(opts =>
         {
-            _pipe = $"pipe/{Guid.NewGuid()}";
-            var builder = WebApplication.CreateBuilder();
-            builder.Services.AddGrpc(opts => opts.MaxReceiveMessageSize = int.MaxValue);
-            builder.WebHost.UseUrls("https://127.0.0.1:0");
-            builder.WebHost.ConfigureKestrel(opts =>
-            {
-                opts.Limits.MaxRequestBodySize = int.MaxValue;
-                opts.ListenNamedPipe(_pipe, c => c.Protocols = HttpProtocols.Http2);
-            });
-            var app = builder.Build();
-            app.MapGrpcService<TestServiceImpl>();
-            app.Start();
+            opts.Limits.MaxRequestBodySize = int.MaxValue;
+            opts.ListenNamedPipe(_pipe, c => c.Protocols = HttpProtocols.Http2);
+        });
+        var app = builder.Build();
+        app.MapGrpcService<TestServiceImpl>();
+        app.Start();
 
-            return new ChannelContext
-            {
-                Impl = new TestServiceImpl(), // TODO: Match instance
-                Client = CreateClient(),
-                OnDispose = () => app.StopAsync()
-            };
+        return new ChannelContext
+        {
+            Impl = new TestServiceImpl(), // TODO: Match instance
+            Client = CreateClient(),
+            OnDispose = () => app.StopAsync()
+        };
+    }
+
+    public override TestService.TestServiceClient CreateClient()
+    {
+        var connectionFactory = new NamedPipesConnectionFactory(_pipe);
+        var socketsHttpHandler = new SocketsHttpHandler
+        {
+            ConnectCallback = connectionFactory.ConnectAsync
+        };
+        return new TestService.TestServiceClient(GrpcChannel.ForAddress("http://localhost",
+            new GrpcChannelOptions { HttpHandler = socketsHttpHandler, MaxReceiveMessageSize = int.MaxValue }));
+    }
+
+    public override string ToString()
+    {
+        return "aspnet-pipe";
+    }
+
+    private class NamedPipesConnectionFactory
+    {
+        private readonly string pipeName;
+
+        public NamedPipesConnectionFactory(string pipeName)
+        {
+            this.pipeName = pipeName;
         }
 
-        public override TestService.TestServiceClient CreateClient()
+        public async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext _,
+            CancellationToken cancellationToken = default)
         {
-            var connectionFactory = new NamedPipesConnectionFactory(_pipe);
-            var socketsHttpHandler = new SocketsHttpHandler
+            var clientStream = new NamedPipeClientStream(
+                serverName: ".",
+                pipeName: this.pipeName,
+                direction: PipeDirection.InOut,
+                options: PipeOptions.WriteThrough | PipeOptions.Asynchronous,
+                impersonationLevel: TokenImpersonationLevel.Anonymous);
+
+            try
             {
-                ConnectCallback = connectionFactory.ConnectAsync
-            };
-            return new TestService.TestServiceClient(GrpcChannel.ForAddress("http://localhost",
-                new GrpcChannelOptions { HttpHandler = socketsHttpHandler, MaxReceiveMessageSize = int.MaxValue }));
-        }
-
-        public override string ToString()
-        {
-            return "aspnet-pipe";
-        }
-
-        private class NamedPipesConnectionFactory
-        {
-            private readonly string pipeName;
-
-            public NamedPipesConnectionFactory(string pipeName)
-            {
-                this.pipeName = pipeName;
+                await clientStream.ConnectAsync(cancellationToken).ConfigureAwait(false);
+                return clientStream;
             }
-
-            public async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext _,
-                CancellationToken cancellationToken = default)
+            catch
             {
-                var clientStream = new NamedPipeClientStream(
-                    serverName: ".",
-                    pipeName: this.pipeName,
-                    direction: PipeDirection.InOut,
-                    options: PipeOptions.WriteThrough | PipeOptions.Asynchronous,
-                    impersonationLevel: TokenImpersonationLevel.Anonymous);
-
-                try
-                {
-                    await clientStream.ConnectAsync(cancellationToken).ConfigureAwait(false);
-                    return clientStream;
-                }
-                catch
-                {
-                    clientStream.Dispose();
-                    throw;
-                }
+                clientStream.Dispose();
+                throw;
             }
         }
     }
