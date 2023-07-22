@@ -20,8 +20,8 @@ public class HttpChannelContextFactory : ChannelContextFactory
 {
     private static readonly ChannelOption[] Options =
     {
-        new ChannelOption(ChannelOptions.MaxReceiveMessageLength, 1024 * 1024 * 1024),
-        new ChannelOption(ChannelOptions.MaxSendMessageLength, 1024 * 1024 * 1024)
+        new(ChannelOptions.MaxReceiveMessageLength, 1024 * 1024 * 1024),
+        new(ChannelOptions.MaxSendMessageLength, 1024 * 1024 * 1024)
     };
     private int _port;
 

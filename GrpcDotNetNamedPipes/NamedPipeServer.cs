@@ -19,8 +19,7 @@ namespace GrpcDotNetNamedPipes;
 public class NamedPipeServer : IDisposable
 {
     private readonly ServerStreamPool _pool;
-    private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers =
-        new Dictionary<string, Func<ServerConnectionContext, Task>>();
+    private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers = new();
 
     public NamedPipeServer(string pipeName)
         : this(pipeName, new NamedPipeServerOptions())

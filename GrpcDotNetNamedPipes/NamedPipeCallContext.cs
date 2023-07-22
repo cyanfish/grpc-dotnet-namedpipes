@@ -73,7 +73,7 @@ public class NamedPipeCallContext : ServerCallContext
 
     protected override Metadata RequestHeadersCore => _ctx.RequestHeaders;
 
-    protected override Metadata ResponseTrailersCore { get; } = new Metadata();
+    protected override Metadata ResponseTrailersCore { get; } = new();
 
     protected override Status StatusCore { get; set; }
 

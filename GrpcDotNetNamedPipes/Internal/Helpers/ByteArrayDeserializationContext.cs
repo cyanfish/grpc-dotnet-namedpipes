@@ -29,5 +29,5 @@ internal class ByteArrayDeserializationContext : DeserializationContext
 
     public override byte[] PayloadAsNewBuffer() => _payload.ToArray();
 
-    public override ReadOnlySequence<byte> PayloadAsReadOnlySequence() => new ReadOnlySequence<byte>(_payload);
+    public override ReadOnlySequence<byte> PayloadAsReadOnlySequence() => new(_payload);
 }

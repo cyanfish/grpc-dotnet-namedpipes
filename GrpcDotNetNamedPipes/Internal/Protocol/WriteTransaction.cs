@@ -9,8 +9,8 @@ internal class WriteTransaction
     private const int PayloadInSeparatePacketThreshold = 15 * 1024; // 15 kiB
 
     private readonly PipeStream _pipeStream;
-    private readonly MemoryStream _packetBuffer = new MemoryStream();
-    private readonly List<byte[]> _trailingPayloads = new List<byte[]>();
+    private readonly MemoryStream _packetBuffer = new();
+    private readonly List<byte[]> _trailingPayloads = new();
 
     public WriteTransaction(PipeStream pipeStream)
     {

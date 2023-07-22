@@ -22,7 +22,7 @@ internal class ServerStreamPool : IDisposable
     private const int FallbackMin = 100;
     private const int FallbackMax = 10_000;
 
-    private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+    private readonly CancellationTokenSource _cts = new();
     private readonly string _pipeName;
     private readonly NamedPipeServerOptions _options;
     private readonly Func<NamedPipeServerStream, Task> _handleConnection;

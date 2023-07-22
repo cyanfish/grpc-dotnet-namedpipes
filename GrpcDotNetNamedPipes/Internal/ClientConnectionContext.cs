@@ -26,7 +26,7 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
     private readonly int _connectionTimeout;
 
     private readonly TaskCompletionSource<Metadata> _responseHeadersTcs =
-        new TaskCompletionSource<Metadata>(TaskCreationOptions.RunContinuationsAsynchronously);
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private CancellationTokenRegistration _cancelReg;
     private byte[] _pendingPayload;

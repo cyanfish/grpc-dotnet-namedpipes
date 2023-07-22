@@ -18,7 +18,7 @@ namespace GrpcDotNetNamedPipes.Internal;
 
 internal class PayloadQueue : IAsyncStreamReader<byte[]>
 {
-    private readonly Queue<byte[]> _internalQueue = new Queue<byte[]>();
+    private readonly Queue<byte[]> _internalQueue = new();
     private TaskCompletionSource<bool> _tcs;
     private CancellationTokenRegistration _cancelReg;
     private Exception _error;

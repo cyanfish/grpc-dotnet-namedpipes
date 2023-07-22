@@ -47,7 +47,7 @@ public class NamedPipeChannelContextFactory : ChannelContextFactory
         return new TestService.TestServiceClient(channel);
     }
 
-    public NamedPipeServer CreateServer() => new NamedPipeServer(_pipeName, new NamedPipeServerOptions());
+    public NamedPipeServer CreateServer() => new(_pipeName, new NamedPipeServerOptions());
 
     public override string ToString()
     {
