@@ -22,7 +22,9 @@ namespace GrpcDotNetNamedPipes.Tests;
 
 public class GrpcNamedPipeTests
 {
-    [Theory]
+    private const int Timeout = 60_000;
+
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public void SimpleUnary(ChannelContextFactory factory)
     {
@@ -32,7 +34,7 @@ public class GrpcNamedPipeTests
         Assert.True(ctx.Impl.SimplyUnaryCalled);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task SimpleUnaryAsync(ChannelContextFactory factory)
     {
@@ -42,7 +44,7 @@ public class GrpcNamedPipeTests
         Assert.True(ctx.Impl.SimplyUnaryCalled);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task LargePayload(ChannelContextFactory factory)
     {
@@ -55,7 +57,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(byteString, response.Binary);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelUnary(ChannelContextFactory factory)
     {
@@ -68,7 +70,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelUnaryBeforeCall(ChannelContextFactory factory)
     {
@@ -82,7 +84,7 @@ public class GrpcNamedPipeTests
         Assert.False(ctx.Impl.SimplyUnaryCalled);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowingUnary(ChannelContextFactory factory)
     {
@@ -93,7 +95,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("Exception was thrown by handler.", exception.Status.Detail);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowCanceledExceptionUnary(ChannelContextFactory factory)
     {
@@ -105,7 +107,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("Exception was thrown by handler.", exception.Status.Detail);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowRpcExceptionUnary(ChannelContextFactory factory)
     {
@@ -117,7 +119,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("Bad arg", exception.Status.Detail);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowAfterCancelUnary(ChannelContextFactory factory)
     {
@@ -130,7 +132,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ClientStreaming(ChannelContextFactory factory)
     {
@@ -144,7 +146,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(6, response.Value);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelClientStreaming(ChannelContextFactory factory)
     {
@@ -159,7 +161,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelClientStreamingBeforeCall(ChannelContextFactory factory)
     {
@@ -173,7 +175,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ClientStreamWriteAfterCompletion(ChannelContextFactory factory)
     {
@@ -186,7 +188,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("Request stream has already been completed.", exception.Message);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ServerStreaming(ChannelContextFactory factory)
     {
@@ -201,7 +203,7 @@ public class GrpcNamedPipeTests
         Assert.False(await call.ResponseStream.MoveNext());
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelServerStreaming(ChannelContextFactory factory)
     {
@@ -216,7 +218,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelServerStreamingBeforeCall(ChannelContextFactory factory)
     {
@@ -229,7 +231,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowingServerStreaming(ChannelContextFactory factory)
     {
@@ -241,7 +243,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("Exception was thrown by handler.", exception.Status.Detail);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ServerStreamWriteAfterCompletion(ChannelContextFactory factory)
     {
@@ -254,7 +256,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("Response stream has already been completed.", exception.Message);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ServerStreamWriteAfterError(ChannelContextFactory factory)
     {
@@ -267,7 +269,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("Response stream has already been completed.", exception.Message);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task DuplexStreaming(ChannelContextFactory factory)
     {
@@ -293,7 +295,7 @@ public class GrpcNamedPipeTests
         Assert.False(await call.ResponseStream.MoveNext());
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelDuplexStreaming(ChannelContextFactory factory)
     {
@@ -308,7 +310,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelDuplexStreamingBeforeCall(ChannelContextFactory factory)
     {
@@ -322,7 +324,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowingDuplexStreaming(ChannelContextFactory factory)
     {
@@ -336,7 +338,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("Exception was thrown by handler.", exception.Status.Detail);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task SetStatus(ChannelContextFactory factory)
     {
@@ -347,7 +349,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("invalid argument", exception.Status.Detail);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task Deadline(ChannelContextFactory factory)
     {
@@ -358,7 +360,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.DeadlineExceeded, exception.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task AlreadyExpiredDeadline(ChannelContextFactory factory)
     {
@@ -370,7 +372,7 @@ public class GrpcNamedPipeTests
         Assert.False(ctx.Impl.SimplyUnaryCalled);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task HeadersAndTrailers(ChannelContextFactory factory)
     {
@@ -426,7 +428,7 @@ public class GrpcNamedPipeTests
         }
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public void ConnectionTimeout(ChannelContextFactory factory)
     {
@@ -436,7 +438,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("failed to connect to all addresses", exception.Status.Detail);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(NamedPipeClassData))]
     public async Task CancellationRace(NamedPipeChannelContextFactory factory)
     {
@@ -460,7 +462,7 @@ public class GrpcNamedPipeTests
         }
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(NamedPipeClassData))]
     public async Task CallImmediatelyAfterKillingServer(NamedPipeChannelContextFactory factory)
     {
@@ -472,7 +474,7 @@ public class GrpcNamedPipeTests
         Assert.Equal("failed to connect to all addresses", exception.Status.Detail);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task RestartServerAfterCall(ChannelContextFactory factory)
     {
@@ -489,7 +491,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(10, response2.Value);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task RestartServerAfterNoCalls(ChannelContextFactory factory)
     {
@@ -504,7 +506,7 @@ public class GrpcNamedPipeTests
         Assert.Equal(10, response2.Value);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(NamedPipeClassData))]
     public void StartServerAfterStop(NamedPipeChannelContextFactory factory)
     {
@@ -515,7 +517,7 @@ public class GrpcNamedPipeTests
     }
 
 #if NET6_0_OR_GREATER || NETFRAMEWORK
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(NamedPipeClassData))]
     public void SimpleUnaryWithACLs(NamedPipeChannelContextFactory factory)
     {
@@ -536,7 +538,7 @@ public class GrpcNamedPipeTests
         Assert.True(ctx.Impl.SimplyUnaryCalled);
     }
 
-    [Theory]
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(NamedPipeClassData))]
     public void SimpleUnaryWithACLsDenied(NamedPipeChannelContextFactory factory)
     {
