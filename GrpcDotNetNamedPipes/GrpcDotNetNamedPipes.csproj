@@ -45,6 +45,8 @@
         <Using Include="Grpc.Core" />
         <Using Include="GrpcDotNetNamedPipes.Generated" />
         <Using Include="GrpcDotNetNamedPipes.Internal" />
+        <Using Include="GrpcDotNetNamedPipes.Internal.Helpers" />
+        <Using Include="GrpcDotNetNamedPipes.Internal.Protocol" />
     </ItemGroup>
 
     <ItemGroup>

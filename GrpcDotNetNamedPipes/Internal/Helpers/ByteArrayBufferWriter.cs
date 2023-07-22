@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-namespace GrpcDotNetNamedPipes.Internal;
+namespace GrpcDotNetNamedPipes.Internal.Helpers;
 
-internal static class SerializationHelpers
+internal class ByteArrayBufferWriter : IBufferWriter<byte>
 {
-    public static byte[] Serialize<T>(Marshaller<T> marshaller, T message)
+    private readonly byte[] _buffer;
+    private int _position;
+
+    public ByteArrayBufferWriter(int size)
     {
-        var serializationContext = new ByteArraySerializationContext();
-        marshaller.ContextualSerializer(message, serializationContext);
-        return serializationContext.SerializedData;
+        _buffer = new byte[size];
     }
 
-    public static T Deserialize<T>(Marshaller<T> marshaller, byte[] payload)
+    public void Advance(int count)
     {
-        var deserializationContext = new ByteArrayDeserializationContext(payload);
-        return marshaller.ContextualDeserializer(deserializationContext);
+        _position += count;
     }
+
+    public Memory<byte> GetMemory(int sizeHint = 0) => _buffer.AsMemory(_position);
+
+    public Span<byte> GetSpan(int sizeHint = 0) => _buffer.AsSpan(_position);
+
+    public byte[] Buffer => _buffer;
 }

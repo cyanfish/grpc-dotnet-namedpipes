@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-namespace GrpcDotNetNamedPipes.Internal;
+namespace GrpcDotNetNamedPipes.Internal.Helpers;
 
-internal class ByteArrayBufferWriter : IBufferWriter<byte>
+internal class ByteArrayDeserializationContext : DeserializationContext
 {
-    private readonly byte[] _buffer;
-    private int _position;
+    private readonly byte[] _payload;
 
-    public ByteArrayBufferWriter(int size)
+    public ByteArrayDeserializationContext(byte[] payload)
     {
-        _buffer = new byte[size];
+        _payload = payload;
     }
 
-    public void Advance(int count)
-    {
-        _position += count;
-    }
+    public override int PayloadLength => _payload.Length;
 
-    public Memory<byte> GetMemory(int sizeHint = 0) => _buffer.AsMemory(_position);
+    public override byte[] PayloadAsNewBuffer() => _payload.ToArray();
 
-    public Span<byte> GetSpan(int sizeHint = 0) => _buffer.AsSpan(_position);
-
-    public byte[] Buffer => _buffer;
+    public override ReadOnlySequence<byte> PayloadAsReadOnlySequence() => new ReadOnlySequence<byte>(_payload);
 }

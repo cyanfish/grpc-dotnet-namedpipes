@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace GrpcDotNetNamedPipes.Internal;
+namespace GrpcDotNetNamedPipes.Internal.Helpers;
 
 internal class ByteArraySerializationContext : SerializationContext
 {

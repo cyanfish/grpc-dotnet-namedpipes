@@ -16,7 +16,7 @@
 
 namespace GrpcDotNetNamedPipes.Internal;
 
-public abstract class TransportMessageHandler
+internal abstract class TransportMessageHandler
 {
     public virtual void HandleRequestInit(string methodFullName, DateTime? deadline) =>
         throw new InvalidOperationException();
