@@ -55,7 +55,7 @@ is a handy matrix to help you decide what's right for you:
 | Binary size (trimmed)      | ~ 300 KB                       | ~ 7 MB                     | ~ 7 MB                             | ~ 7 MB                    |
 | Startup time               | < 25ms                         | < 25ms                     | < 25ms                             | ~ 250ms                   |
 | Large message throughput   | ~ 500MB/s                      | ~ 400MB/s                  | ~ 100MB/s                          | ~ 100MB/s                 |
-| Streaming messages         | ~ 250k/s                       | ~ 500k/s                   | ~ 500k/s                           | ~ 400k/s                  |
+| Streaming messages         | ~ 400k/s                       | ~ 500k/s                   | ~ 500k/s                           | ~ 400k/s                  |
 | Method calls               | ~ 8000/s                       | ~ 4000/s                   | ~ 5000/s                           | ~ 2500/s                  |
 | Compatible with gRPC-Go    | :x:                            | :heavy_check_mark:         | :heavy_check_mark:                 | :heavy_check_mark:        |
 | Official Microsoft support | :x:                            | :heavy_check_mark:         | :heavy_check_mark:                 | :heavy_check_mark:        |

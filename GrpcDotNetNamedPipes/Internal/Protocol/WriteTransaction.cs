@@ -50,7 +50,13 @@ internal class WriteTransaction
 
     private WriteTransaction AddMessage(TransportMessage message)
     {
-        message.WriteDelimitedTo(_packetBuffer);
+        // message.WriteDelimitedTo is a helper method that does this for us. But it uses a default buffer size of 4096
+        // which is much bigger than we need - most messages are only a few bytes. A small buffer size ends up being
+        // significantly faster on the ServerStreamingManyMessagesPerformance test.
+        CodedOutputStream codedOutput = new CodedOutputStream(_packetBuffer, 16);
+        codedOutput.WriteLength(message.CalculateSize());
+        message.WriteTo(codedOutput);
+        codedOutput.Flush();
         return this;
     }
 
