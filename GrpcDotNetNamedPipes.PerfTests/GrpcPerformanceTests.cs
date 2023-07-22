@@ -64,6 +64,13 @@ public class GrpcPerformanceTests
     [ClassData(typeof(MultiChannelWithAspNetClassData))]
     public async Task UnaryParallelChannelsPerformance(ChannelContextFactory factory)
     {
+#if NET8_0_OR_GREATER
+        if (factory is AspNetPipeContextFactory)
+        {
+            _testOutputHelper.WriteLine("Skipped (ASP.NET named pipes fail with too many parallel channels)");
+            return;
+        }
+#endif
         using var ctx = factory.Create();
         var stopwatch = Stopwatch.StartNew();
         var tasks = new Task[1_000];
