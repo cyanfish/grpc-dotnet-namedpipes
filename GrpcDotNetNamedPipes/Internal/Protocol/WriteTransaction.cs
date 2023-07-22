@@ -8,39 +8,50 @@ internal class WriteTransaction
 {
     private const int PayloadInSeparatePacketThreshold = 15 * 1024; // 15 kiB
 
-    private readonly PipeStream _pipeStream;
+    private readonly WriteTransactionQueue _txQueue;
     private readonly MemoryStream _packetBuffer = new();
     private readonly List<byte[]> _trailingPayloads = new();
 
-    public WriteTransaction(PipeStream pipeStream)
+    public WriteTransaction(WriteTransactionQueue txQueue)
     {
-        _pipeStream = pipeStream;
+        _txQueue = txQueue;
+    }
+
+    public void Commit()
+    {
+        _txQueue.Add(this);
+    }
+
+    public void WriteTo(PipeStream pipeStream)
+    {
+        lock (pipeStream)
+        {
+            if (_packetBuffer.Length > 0)
+            {
+                if (PlatformConfig.SizePrefix)
+                {
+                    pipeStream.Write(BitConverter.GetBytes(_packetBuffer.Length), 0, 4);
+                }
+                _packetBuffer.WriteTo(pipeStream);
+            }
+
+            foreach (var payload in _trailingPayloads)
+            {
+                pipeStream.Write(payload, 0, payload.Length);
+            }
+        }
+    }
+
+    public void MergeFrom(WriteTransaction other)
+    {
+        other._packetBuffer.WriteTo(_packetBuffer);
+        _trailingPayloads.AddRange(other._trailingPayloads);
     }
 
     private WriteTransaction AddMessage(TransportMessage message)
     {
         message.WriteDelimitedTo(_packetBuffer);
         return this;
-    }
-
-    public void Commit()
-    {
-        lock (_pipeStream)
-        {
-            if (_packetBuffer.Length > 0)
-            {
-                if (PlatformConfig.SizePrefix)
-                {
-                    _pipeStream.Write(BitConverter.GetBytes(_packetBuffer.Length), 0, 4);
-                }
-                _packetBuffer.WriteTo(_pipeStream);
-            }
-
-            foreach (var payload in _trailingPayloads)
-            {
-                _pipeStream.Write(payload, 0, payload.Length);
-            }
-        }
     }
 
     public WriteTransaction RequestInit(string methodFullName, DateTime? deadline)

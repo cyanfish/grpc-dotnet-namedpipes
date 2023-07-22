@@ -25,10 +25,12 @@ internal class NamedPipeTransport
 
     private readonly byte[] _messageBuffer = new byte[MessageBufferSize];
     private readonly PipeStream _pipeStream;
+    private readonly WriteTransactionQueue _txQueue;
 
     public NamedPipeTransport(PipeStream pipeStream)
     {
         _pipeStream = pipeStream;
+        _txQueue = new WriteTransactionQueue(pipeStream);
     }
 
     private async Task<MemoryStream> ReadPacketFromPipe()
@@ -160,6 +162,6 @@ internal class NamedPipeTransport
 
     public WriteTransaction Write()
     {
-        return new WriteTransaction(_pipeStream);
+        return new WriteTransaction(_txQueue);
     }
 }
