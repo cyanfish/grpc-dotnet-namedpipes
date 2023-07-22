@@ -36,7 +36,8 @@ public class MultiChannelWithAspNetClassData : IEnumerable<object[]>
 #if NET8_0_OR_GREATER
         yield return new object[] { new AspNetPipeContextFactory() };
 #endif
-        yield return new object[] { new HttpChannelContextFactory() };
+        // The legacy HTTP gRPC is obsolete and much slower than anything else, so not much point comparing
+        // yield return new object[] { new HttpChannelContextFactory() };
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
