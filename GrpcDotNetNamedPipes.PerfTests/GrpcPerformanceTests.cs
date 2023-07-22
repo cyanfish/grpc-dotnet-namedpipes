@@ -35,7 +35,7 @@ public class GrpcPerformanceTests
     {
         using var ctx = factory.Create();
         var stopwatch = Stopwatch.StartNew();
-        var call = ctx.Client.ServerStreaming(new RequestMessage { Value = 10_000 });
+        var call = ctx.Client.ServerStreaming(new RequestMessage { Value = 100_000 });
         while (await call.ResponseStream.MoveNext())
         {
         }
