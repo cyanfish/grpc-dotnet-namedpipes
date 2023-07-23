@@ -157,6 +157,8 @@ public class GrpcNamedPipeTests
         cts.Cancel();
         await Assert.ThrowsAsync<TaskCanceledException>(async () =>
             await call.RequestStream.WriteAsync(new RequestMessage { Value = 1 }));
+        await Assert.ThrowsAsync<TaskCanceledException>(async () =>
+            await call.RequestStream.CompleteAsync());
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseAsync);
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }

@@ -18,25 +18,26 @@ namespace GrpcDotNetNamedPipes.Internal;
 
 internal class StreamWriterImpl<T> : IAsyncStreamWriter<T>
 {
-    private readonly CancellationToken _cancellationToken;
     private readonly Marshaller<T> _marshaller;
 
-    public StreamWriterImpl(NamedPipeTransport stream, CancellationToken cancellationToken, Marshaller<T> marshaller)
+    public StreamWriterImpl(NamedPipeTransport stream, CancellationToken cancelToken, Marshaller<T> marshaller)
     {
         Stream = stream;
-        _cancellationToken = cancellationToken;
+        CancelToken = cancelToken;
         _marshaller = marshaller;
     }
 
     public WriteOptions WriteOptions { get; set; }
 
+    protected CancellationToken CancelToken { get; }
+
     protected NamedPipeTransport Stream { get; }
 
     public virtual Task WriteAsync(T message)
     {
-        if (_cancellationToken.IsCancellationRequested)
+        if (CancelToken.IsCancellationRequested)
         {
-            return Task.FromCanceled(_cancellationToken);
+            return Task.FromCanceled(CancelToken);
         }
 
         var payload = SerializationHelpers.Serialize(_marshaller, message);

@@ -37,6 +37,10 @@ internal class RequestStreamWriterImpl<T> : StreamWriterImpl<T>, IClientStreamWr
 
     public Task CompleteAsync()
     {
+        if (CancelToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled(CancelToken);
+        }
         Stream.Write().RequestStreamEnd().Commit();
         _isCompleted = true;
         return Task.CompletedTask;
