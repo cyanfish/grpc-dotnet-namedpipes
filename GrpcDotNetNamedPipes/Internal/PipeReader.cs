@@ -38,9 +38,9 @@ internal class PipeReader
     {
         try
         {
-            while (_pipeStream.IsConnected)
+            while (_pipeStream.IsConnected &&
+                   await _transport.Read(_messageHandler).ConfigureAwait(false))
             {
-                await _transport.Read(_messageHandler).ConfigureAwait(false);
             }
         }
         catch (EndOfPipeException)

@@ -89,7 +89,7 @@ internal class NamedPipeTransport
         return BitConverter.ToInt32(_messageBuffer, 0);
     }
 
-    public async Task Read(TransportMessageHandler messageHandler)
+    public async Task<bool> Read(TransportMessageHandler messageHandler)
     {
         var packet = await ReadPacketFromPipe().ConfigureAwait(false);
         while (packet.Position < packet.Length)
@@ -136,9 +136,11 @@ internal class NamedPipeTransport
                     var status = new Status((StatusCode) message.Trailers.StatusCode,
                         message.Trailers.StatusDetail);
                     messageHandler.HandleTrailers(trailerMetadata, status);
-                    break;
+                    // Stop reading after receiving trailers
+                    return false;
             }
         }
+        return true;
     }
 
     private static Metadata ConstructMetadata(RepeatedField<MetadataEntry> entries)
