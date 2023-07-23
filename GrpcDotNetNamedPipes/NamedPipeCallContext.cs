@@ -51,6 +51,11 @@ public class NamedPipeCallContext : ServerCallContext
         _ctx.PipeStream.RunAsClient(impersonationWorker);
     }
 
+    public void DisconnectPipeStream()
+    {
+        _ctx.PipeStream.Disconnect();
+    }
+
     protected override CancellationToken CancellationTokenCore =>
         _ctx.CancellationTokenSource.Token;
 

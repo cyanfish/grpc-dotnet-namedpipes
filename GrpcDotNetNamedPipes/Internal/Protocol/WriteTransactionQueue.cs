@@ -15,6 +15,10 @@ internal class WriteTransactionQueue
     {
         lock (this)
         {
+            if (!_pipeStream.IsConnected)
+            {
+                throw new RpcException(new Status(StatusCode.Unavailable, "connection was unexpectedly terminated"));
+            }
             _queue.Add(tx);
             _dequeueTask ??= Task.Run(Dequeue);
         }
@@ -36,7 +40,14 @@ internal class WriteTransactionQueue
             {
                 mergedTx.MergeFrom(tx);
             }
-            mergedTx.WriteTo(_pipeStream);
+            try
+            {
+                mergedTx.WriteTo(_pipeStream);
+            }
+            catch (Exception)
+            {
+                // Not a lot we can do to recover here
+            }
             lock (this)
             {
                 if (_queue.Count == 0)

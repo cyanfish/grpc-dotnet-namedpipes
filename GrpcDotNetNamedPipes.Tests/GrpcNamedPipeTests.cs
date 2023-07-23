@@ -441,6 +441,30 @@ public class GrpcNamedPipeTests
     }
 
     [Theory(Timeout = Timeout)]
+    [ClassData(typeof(MultiChannelClassData))]
+    public async Task DroppedConnection(ChannelContextFactory factory)
+    {
+        using var ctx = factory.Create();
+        var task = ctx.Client.DropConnectionAsync(new RequestMessage());
+        ctx.Dispose();
+        var exception = await Assert.ThrowsAsync<RpcException>(async () => await task);
+        Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
+    }
+
+    [Theory(Timeout = Timeout)]
+    [ClassData(typeof(MultiChannelClassData))]
+    public async Task DroppedConnectionClientStreaming(ChannelContextFactory factory)
+    {
+        using var ctx = factory.Create();
+        var call = ctx.Client.DropConnectionClientStreaming();
+        ctx.Dispose();
+        await Task.Delay(500);
+        var exception = await Assert.ThrowsAsync<RpcException>(
+                async () => await call.RequestStream.WriteAsync(new RequestMessage()));
+        Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
+    }
+
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(NamedPipeClassData))]
     public async Task CancellationRace(NamedPipeChannelContextFactory factory)
     {

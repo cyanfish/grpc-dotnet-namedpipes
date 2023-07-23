@@ -159,6 +159,27 @@ public class TestServiceImpl : TestService.TestServiceBase
         return Task.FromResult(new ResponseMessage());
     }
 
+    public override Task<ResponseMessage> DropConnection(RequestMessage request, ServerCallContext context)
+    {
+        Thread.Sleep(100);
+        if (context is NamedPipeCallContext namedPipeCallContext)
+        {
+            namedPipeCallContext.DisconnectPipeStream();
+        }
+        return Task.FromResult(new ResponseMessage());
+    }
+
+    public override Task<ResponseMessage> DropConnectionClientStreaming(IAsyncStreamReader<RequestMessage> requestStream,
+        ServerCallContext context)
+    {
+        Thread.Sleep(100);
+        if (context is NamedPipeCallContext namedPipeCallContext)
+        {
+            namedPipeCallContext.DisconnectPipeStream();
+        }
+        return Task.FromResult(new ResponseMessage());
+    }
+
     public Metadata RequestHeaders { get; private set; }
 
     public Metadata ResponseHeaders { private get; set; }

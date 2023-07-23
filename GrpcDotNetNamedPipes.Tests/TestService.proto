@@ -32,6 +32,8 @@ service TestService {
     rpc ThrowingDuplexStreaming (stream RequestMessage) returns (stream ResponseMessage) {}
     rpc HeadersTrailers (RequestMessage) returns (ResponseMessage) {}
     rpc SetStatus (RequestMessage) returns (ResponseMessage) {}
+    rpc DropConnection (RequestMessage) returns (ResponseMessage) {}
+    rpc DropConnectionClientStreaming (stream RequestMessage) returns (ResponseMessage) {}
 }
 
 message RequestMessage {
