@@ -431,6 +431,18 @@ public class GrpcNamedPipeTests
     }
 
     [Theory(Timeout = Timeout)]
+    [ClassData(typeof(NamedPipeClassData))]
+    public void CallInfo(NamedPipeChannelContextFactory factory)
+    {
+#if NET6_0_OR_GREATER
+        if (!OperatingSystem.IsWindows()) return;
+#endif
+        using var ctx = factory.Create();
+        ctx.Client.GetCallInfo(new RequestMessage());
+        Assert.Equal($"net.pipe://localhost/pid/{Process.GetCurrentProcess().Id}", ctx.Impl.Peer);
+    }
+
+    [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public void ConnectionTimeout(ChannelContextFactory factory)
     {

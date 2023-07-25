@@ -159,6 +159,12 @@ public class TestServiceImpl : TestService.TestServiceBase
         return Task.FromResult(new ResponseMessage());
     }
 
+    public override Task<ResponseMessage> GetCallInfo(RequestMessage request, ServerCallContext context)
+    {
+        Peer = context.Peer;
+        return Task.FromResult(new ResponseMessage());
+    }
+
     public override Task<ResponseMessage> DropConnection(RequestMessage request, ServerCallContext context)
     {
         Thread.Sleep(100);
@@ -185,4 +191,6 @@ public class TestServiceImpl : TestService.TestServiceBase
     public Metadata ResponseHeaders { private get; set; }
 
     public Metadata ResponseTrailers { private get; set; }
+
+    public string Peer { get; private set; }
 }

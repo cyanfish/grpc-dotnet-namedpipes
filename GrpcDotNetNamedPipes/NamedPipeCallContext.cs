@@ -72,7 +72,22 @@ public class NamedPipeCallContext : ServerCallContext
 
     protected override string HostCore => throw new NotSupportedException();
 
-    protected override string PeerCore => throw new NotSupportedException();
+    /// <summary>
+    /// Returns a string in the form "net.pipe://localhost/pid/12345" that gives you the machine name (or "localhost")
+    /// and the process ID of the caller for the current RPC.
+    /// </summary>
+    /// <exception cref="NotSupportedException">Only supported on Windows.</exception>
+    protected override string PeerCore
+    {
+        get
+        {
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT) throw new NotSupportedException();
+            var pipeHandle = _ctx.PipeStream.SafePipeHandle.DangerousGetHandle();
+            var computerName = PipeInterop.GetClientComputerName(pipeHandle);
+            var processId = PipeInterop.GetClientProcessId(pipeHandle);
+            return $"net.pipe://{computerName}/pid/{processId}";
+        }
+    }
 
     protected override DateTime DeadlineCore => _ctx.Deadline.Value;
 
