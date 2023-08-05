@@ -51,7 +51,7 @@ public class NamedPipeCallContext : ServerCallContext
         _ctx.PipeStream.RunAsClient(impersonationWorker);
     }
 
-    public void DisconnectPipeStream()
+    internal void DisconnectPipeStream()
     {
         _ctx.PipeStream.Disconnect();
     }

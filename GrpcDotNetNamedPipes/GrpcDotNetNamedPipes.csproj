@@ -50,6 +50,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>GrpcDotNetNamedPipes.Tests, PublicKey=002400000480000014010000060200000024000052534131000800000100010047369c3d385b4e621dce099e51785be1eed3cefd4fca3ae9879ebbf7d8ab940d1bcd7dafc1ca499458094ad7484642318db10044c1d9cf647fa601865f0bec6f836d8a36db364f296880e4f900da5cd4e6eba826fd0672ae855bef275bc4f281d95ccdb9fc2f5f2b8299b07aceab4473e3ac6ce724ded956badb765c98d0b5c1514b9dc1dff4da73057a6105421de97b93ccbd692aa10d6c3ffb13e3e19440827e1c9b08c8a591bbb29327762b0d6eaf96a644c0bedddda25e9087047eca607001869fcd44eca48b058b288c67598fddeabff8f2a239e5dcd9df5c40656e65bd5fff61e6f875c84d1850c8446f016f435eb3f036de4c5a820b649cebafbb2aaa</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
         <Protobuf Include="**/*.proto" Access="Internal" />
     </ItemGroup>
 

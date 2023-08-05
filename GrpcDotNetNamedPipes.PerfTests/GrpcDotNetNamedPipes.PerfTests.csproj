@@ -4,6 +4,8 @@
         <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net6;net8;net462</TargetFrameworks>
         <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net6;net8</TargetFrameworks>
         <LangVersion>11</LangVersion>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>../GrpcDotNetNamedPipes/public_signing_key.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>
