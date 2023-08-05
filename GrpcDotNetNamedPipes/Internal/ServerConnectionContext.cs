@@ -119,6 +119,10 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 
     public void Dispose()
     {
+        if (!IsCompleted)
+        {
+            CancellationTokenSource.Cancel();
+        }
         _payloadQueue.Dispose();
         PipeStream?.Dispose();
     }

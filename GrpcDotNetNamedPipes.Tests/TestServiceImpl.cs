@@ -186,6 +186,22 @@ public class TestServiceImpl : TestService.TestServiceBase
         return Task.FromResult(new ResponseMessage());
     }
 
+    public override async Task<ResponseMessage> WaitForCancellation(RequestMessage request, ServerCallContext context)
+    {
+        try
+        {
+            await Task.Delay(2000, context.CancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            CancellationOccurred = true;
+            throw;
+        }
+        return new ResponseMessage();
+    }
+
+    public bool CancellationOccurred { get; private set; }
+
     public Metadata RequestHeaders { get; private set; }
 
     public Metadata ResponseHeaders { private get; set; }

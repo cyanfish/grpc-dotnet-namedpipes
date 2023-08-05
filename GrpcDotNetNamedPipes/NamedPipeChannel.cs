@@ -34,6 +34,8 @@ public class NamedPipeChannel : CallInvoker
         _options = options;
     }
 
+    internal Action<NamedPipeClientStream> PipeCallback { get; set; }
+
     private ClientConnectionContext CreateConnectionContext<TRequest, TResponse>(
         Method<TRequest, TResponse> method, CallOptions callOptions, TRequest request)
         where TRequest : class where TResponse : class
@@ -48,6 +50,7 @@ public class NamedPipeChannel : CallInvoker
 
         var stream = new NamedPipeClientStream(_serverName, _pipeName, PipeDirection.InOut,
             pipeOptions, _options.ImpersonationLevel, HandleInheritability.None);
+        PipeCallback?.Invoke(stream);
 
         try
         {

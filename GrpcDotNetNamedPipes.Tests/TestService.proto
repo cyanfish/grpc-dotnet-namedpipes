@@ -35,6 +35,7 @@ service TestService {
     rpc GetCallInfo (RequestMessage) returns (ResponseMessage) {}
     rpc DropConnection (RequestMessage) returns (ResponseMessage) {}
     rpc DropConnectionClientStreaming (stream RequestMessage) returns (ResponseMessage) {}
+    rpc WaitForCancellation (RequestMessage) returns (ResponseMessage) {}
 }
 
 message RequestMessage {

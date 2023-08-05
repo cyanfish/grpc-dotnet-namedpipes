@@ -44,8 +44,11 @@ public class NamedPipeChannelContextFactory : ChannelContextFactory
     {
         var channel = new NamedPipeChannel(".", _pipeName,
             new NamedPipeChannelOptions { ConnectionTimeout = _connectionTimeout });
+        channel.PipeCallback = PipeCallback;
         return new TestService.TestServiceClient(channel);
     }
+
+    public Action<NamedPipeClientStream> PipeCallback { get; set; }
 
     public NamedPipeServer CreateServer() => new(_pipeName, new NamedPipeServerOptions());
 

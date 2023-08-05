@@ -454,7 +454,7 @@ public class GrpcNamedPipeTests
 
     [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
-    public async Task DroppedConnection(ChannelContextFactory factory)
+    public async Task DroppedServerConnection(ChannelContextFactory factory)
     {
         using var ctx = factory.Create();
         var task = ctx.Client.DropConnectionAsync(new RequestMessage());
@@ -465,7 +465,7 @@ public class GrpcNamedPipeTests
 
     [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
-    public async Task DroppedConnectionClientStreaming(ChannelContextFactory factory)
+    public async Task DroppedServerConnectionClientStreaming(ChannelContextFactory factory)
     {
         using var ctx = factory.Create();
         var call = ctx.Client.DropConnectionClientStreaming();
@@ -474,6 +474,20 @@ public class GrpcNamedPipeTests
         var exception = await Assert.ThrowsAsync<RpcException>(
                 async () => await call.RequestStream.WriteAsync(new RequestMessage()));
         Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
+    }
+
+    [Theory(Timeout = Timeout)]
+    [ClassData(typeof(NamedPipeClassData))]
+    public async Task DroppedClientConnection(NamedPipeChannelContextFactory factory)
+    {
+        NamedPipeClientStream pipe = null;
+        factory.PipeCallback = p => pipe = p;
+        using var ctx = factory.Create();
+        var _ = ctx.Client.WaitForCancellationAsync(new RequestMessage());
+        await Task.Delay(100);
+        pipe.Close();
+        await Task.Delay(500);
+        Assert.True(ctx.Impl.CancellationOccurred);
     }
 
     [Theory(Timeout = Timeout)]
