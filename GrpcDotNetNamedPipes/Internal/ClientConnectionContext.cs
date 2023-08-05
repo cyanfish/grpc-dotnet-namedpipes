@@ -90,8 +90,6 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
         _responseTrailers = trailers ?? new Metadata();
         _status = status;
 
-        _pipeStream.Close();
-
         if (_pendingPayload != null)
         {
             _payloadQueue.AppendPayload(_pendingPayload);
@@ -159,8 +157,8 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
 
     public void Dispose()
     {
+        _cancelReg.Dispose();
         _payloadQueue.Dispose();
         _pipeStream.Dispose();
-        _cancelReg.Dispose();
     }
 }
