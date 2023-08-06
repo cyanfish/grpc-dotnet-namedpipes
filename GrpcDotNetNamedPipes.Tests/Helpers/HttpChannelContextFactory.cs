@@ -25,7 +25,7 @@ public class HttpChannelContextFactory : ChannelContextFactory
     };
     private int _port;
 
-    public override ChannelContext Create()
+    public override ChannelContext Create(ITestOutputHelper output = null)
     {
         var impl = new TestServiceImpl();
         var server = new Server(Options)
@@ -38,12 +38,12 @@ public class HttpChannelContextFactory : ChannelContextFactory
         return new ChannelContext
         {
             Impl = impl,
-            Client = CreateClient(),
+            Client = CreateClient(output),
             OnDispose = () => server.KillAsync()
         };
     }
 
-    public override TestService.TestServiceClient CreateClient()
+    public override TestService.TestServiceClient CreateClient(ITestOutputHelper output = null)
     {
         var channel = new Channel(
             "localhost",

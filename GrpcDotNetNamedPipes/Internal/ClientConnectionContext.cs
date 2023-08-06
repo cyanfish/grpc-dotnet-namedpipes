@@ -24,6 +24,7 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
     private readonly PayloadQueue _payloadQueue;
     private readonly Deadline _deadline;
     private readonly int _connectionTimeout;
+    private readonly ConnectionLogger _logger;
 
     private readonly TaskCompletionSource<Metadata> _responseHeadersTcs =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -34,15 +35,16 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
     private Status _status;
 
     public ClientConnectionContext(NamedPipeClientStream pipeStream, CallOptions callOptions, bool isServerUnary,
-        int connectionTimeout)
+        int connectionTimeout, ConnectionLogger logger)
     {
         _pipeStream = pipeStream;
         _callOptions = callOptions;
         _isServerUnary = isServerUnary;
-        Transport = new NamedPipeTransport(pipeStream);
+        Transport = new NamedPipeTransport(pipeStream, logger);
         _payloadQueue = new PayloadQueue();
         _deadline = new Deadline(callOptions.Deadline);
         _connectionTimeout = connectionTimeout;
+        _logger = logger;
     }
 
     public NamedPipeTransport Transport { get; }

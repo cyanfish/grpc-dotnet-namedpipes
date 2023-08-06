@@ -25,11 +25,13 @@ internal class NamedPipeTransport
 
     private readonly byte[] _messageBuffer = new byte[MessageBufferSize];
     private readonly PipeStream _pipeStream;
+    private readonly ConnectionLogger _logger;
     private readonly WriteTransactionQueue _txQueue;
 
-    public NamedPipeTransport(PipeStream pipeStream)
+    public NamedPipeTransport(PipeStream pipeStream, ConnectionLogger logger)
     {
         _pipeStream = pipeStream;
+        _logger = logger;
         _txQueue = new WriteTransactionQueue(pipeStream);
     }
 
@@ -99,14 +101,18 @@ internal class NamedPipeTransport
             switch (message.DataCase)
             {
                 case TransportMessage.DataOneofCase.RequestInit:
+                    _logger.ConnectionId = message.RequestInit.ConnectionId;
+                    _logger.Log($"Received <RequestInit> for '{message.RequestInit.MethodFullName}'");
                     messageHandler.HandleRequestInit(message.RequestInit.MethodFullName,
                         message.RequestInit.Deadline?.ToDateTime());
                     break;
                 case TransportMessage.DataOneofCase.Headers:
+                    _logger.Log("Received <Headers>");
                     var headerMetadata = ConstructMetadata(message.Headers.Metadata);
                     messageHandler.HandleHeaders(headerMetadata);
                     break;
                 case TransportMessage.DataOneofCase.PayloadInfo:
+                    _logger.Log($"Received <PayloadInfo> with {message.PayloadInfo.Size} bytes");
                     var payload = new byte[message.PayloadInfo.Size];
                     if (message.PayloadInfo.InSamePacket)
                     {
@@ -123,15 +129,18 @@ internal class NamedPipeTransport
                     switch (message.RequestControl)
                     {
                         case RequestControl.Cancel:
+                            _logger.Log("Received <Cancel>");
                             messageHandler.HandleCancel();
                             break;
                         case RequestControl.StreamEnd:
+                            _logger.Log("Received <StreamEnd>");
                             messageHandler.HandleStreamEnd();
                             break;
                     }
 
                     break;
                 case TransportMessage.DataOneofCase.Trailers:
+                    _logger.Log($"Received <Trailers> with status '{message.Trailers.StatusCode}'");
                     var trailerMetadata = ConstructMetadata(message.Trailers.Metadata);
                     var status = new Status((StatusCode) message.Trailers.StatusCode,
                         message.Trailers.StatusDetail);
@@ -164,6 +173,6 @@ internal class NamedPipeTransport
 
     public WriteTransaction Write()
     {
-        return new WriteTransaction(_txQueue);
+        return new WriteTransaction(_txQueue, _logger);
     }
 }

@@ -39,6 +39,7 @@ enum RequestControl {
 message RequestInit {
     string methodFullName = 1;
     google.protobuf.Timestamp deadline = 2;
+    int32 connectionId = 3;
 }
 
 message Headers {

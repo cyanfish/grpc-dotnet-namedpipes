@@ -21,6 +21,7 @@ public class NamedPipeChannel : CallInvoker
     private readonly string _serverName;
     private readonly string _pipeName;
     private readonly NamedPipeChannelOptions _options;
+    private readonly Action<string> _log;
 
     public NamedPipeChannel(string serverName, string pipeName)
         : this(serverName, pipeName, new NamedPipeChannelOptions())
@@ -28,10 +29,16 @@ public class NamedPipeChannel : CallInvoker
     }
 
     public NamedPipeChannel(string serverName, string pipeName, NamedPipeChannelOptions options)
+        : this(serverName, pipeName, options, null)
+    {
+    }
+
+    internal NamedPipeChannel(string serverName, string pipeName, NamedPipeChannelOptions options, Action<string> log)
     {
         _serverName = serverName;
         _pipeName = pipeName;
         _options = options;
+        _log = log;
     }
 
     internal Action<NamedPipeClientStream> PipeCallback { get; set; }
@@ -55,9 +62,11 @@ public class NamedPipeChannel : CallInvoker
         try
         {
             bool isServerUnary = method.Type == MethodType.Unary || method.Type == MethodType.ClientStreaming;
-            var ctx = new ClientConnectionContext(stream, callOptions, isServerUnary, _options.ConnectionTimeout);
+            var logger = ConnectionLogger.Client(_log);
+            var ctx = new ClientConnectionContext(stream, callOptions, isServerUnary, _options.ConnectionTimeout,
+                logger);
             ctx.InitCall(method, request);
-            Task.Run(new PipeReader(stream, ctx, ctx.Dispose).ReadLoop);
+            Task.Run(new PipeReader(stream, ctx, logger, ctx.Dispose).ReadLoop);
             return ctx;
         }
         catch (Exception ex)

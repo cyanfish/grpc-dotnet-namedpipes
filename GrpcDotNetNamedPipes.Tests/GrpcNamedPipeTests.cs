@@ -24,11 +24,18 @@ public class GrpcNamedPipeTests
 {
     private const int Timeout = 60_000;
 
+    private readonly ITestOutputHelper _output;
+
+    public GrpcNamedPipeTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public void SimpleUnary(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var response = ctx.Client.SimpleUnary(new RequestMessage { Value = 10 });
         Assert.Equal(10, response.Value);
         Assert.True(ctx.Impl.SimplyUnaryCalled);
@@ -38,7 +45,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task SimpleUnaryAsync(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var response = await ctx.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 });
         Assert.Equal(10, response.Value);
         Assert.True(ctx.Impl.SimplyUnaryCalled);
@@ -52,7 +59,7 @@ public class GrpcNamedPipeTests
         new Random(1234).NextBytes(bytes);
         var byteString = ByteString.CopyFrom(bytes);
 
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var response = await ctx.Client.SimpleUnaryAsync(new RequestMessage { Binary = byteString });
         Assert.Equal(byteString, response.Binary);
     }
@@ -61,7 +68,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelUnary(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var cts = new CancellationTokenSource();
         var responseTask =
             ctx.Client.DelayedUnaryAsync(new RequestMessage { Value = 10 }, cancellationToken: cts.Token);
@@ -74,7 +81,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelUnaryBeforeCall(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var cts = new CancellationTokenSource();
         cts.Cancel();
         var responseTask =
@@ -88,7 +95,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowingUnary(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var responseTask = ctx.Client.ThrowingUnaryAsync(new RequestMessage { Value = 10 });
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await responseTask);
         Assert.Equal(StatusCode.Unknown, exception.StatusCode);
@@ -99,7 +106,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowCanceledExceptionUnary(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         ctx.Impl.ExceptionToThrow = new OperationCanceledException();
         var responseTask = ctx.Client.ThrowingUnaryAsync(new RequestMessage { Value = 10 });
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await responseTask);
@@ -111,7 +118,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowRpcExceptionUnary(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         ctx.Impl.ExceptionToThrow = new RpcException(new Status(StatusCode.InvalidArgument, "Bad arg"));
         var responseTask = ctx.Client.ThrowingUnaryAsync(new RequestMessage { Value = 10 });
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await responseTask);
@@ -123,7 +130,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowAfterCancelUnary(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var cts = new CancellationTokenSource();
         var responseTask =
             ctx.Client.DelayedThrowingUnaryAsync(new RequestMessage { Value = 10 }, cancellationToken: cts.Token);
@@ -136,7 +143,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ClientStreaming(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.ClientStreaming();
         await call.RequestStream.WriteAsync(new RequestMessage { Value = 3 });
         await call.RequestStream.WriteAsync(new RequestMessage { Value = 2 });
@@ -150,7 +157,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelClientStreaming(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var cts = new CancellationTokenSource();
         var call = ctx.Client.ClientStreaming(cancellationToken: cts.Token);
         await call.RequestStream.WriteAsync(new RequestMessage { Value = 1 });
@@ -167,7 +174,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelClientStreamingBeforeCall(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var cts = new CancellationTokenSource();
         cts.Cancel();
         var call = ctx.Client.ClientStreaming(cancellationToken: cts.Token);
@@ -181,7 +188,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ClientStreamWriteAfterCompletion(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.ClientStreaming();
         await call.RequestStream.WriteAsync(new RequestMessage { Value = 1 });
         await call.RequestStream.CompleteAsync();
@@ -194,7 +201,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ServerStreaming(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.ServerStreaming(new RequestMessage { Value = 3 });
         Assert.True(await call.ResponseStream.MoveNext());
         Assert.Equal(3, call.ResponseStream.Current.Value);
@@ -209,7 +216,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelServerStreaming(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var cts = new CancellationTokenSource();
         var call = ctx.Client.DelayedServerStreaming(new RequestMessage { Value = 3 },
             cancellationToken: cts.Token);
@@ -224,7 +231,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelServerStreamingBeforeCall(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var cts = new CancellationTokenSource();
         cts.Cancel();
         var call = ctx.Client.DelayedServerStreaming(new RequestMessage { Value = 3 },
@@ -237,7 +244,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowingServerStreaming(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.ThrowingServerStreaming(new RequestMessage { Value = 1 });
         Assert.True(await call.ResponseStream.MoveNext());
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
@@ -249,7 +256,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ServerStreamWriteAfterCompletion(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.ServerStreaming(new RequestMessage { Value = 1 });
         Assert.True(await call.ResponseStream.MoveNext());
         Assert.False(await call.ResponseStream.MoveNext());
@@ -262,7 +269,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ServerStreamWriteAfterError(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.ThrowingServerStreaming(new RequestMessage { Value = 1 });
         Assert.True(await call.ResponseStream.MoveNext());
         await Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
@@ -275,7 +282,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task DuplexStreaming(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.DuplexStreaming();
 
         Assert.True(await call.ResponseStream.MoveNext());
@@ -301,7 +308,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelDuplexStreaming(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var cts = new CancellationTokenSource();
         var call = ctx.Client.DelayedDuplexStreaming(cancellationToken: cts.Token);
         await call.RequestStream.WriteAsync(new RequestMessage { Value = 1 });
@@ -316,7 +323,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task CancelDuplexStreamingBeforeCall(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var cts = new CancellationTokenSource();
         cts.Cancel();
         var call = ctx.Client.DelayedDuplexStreaming(cancellationToken: cts.Token);
@@ -330,7 +337,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowingDuplexStreaming(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.ThrowingDuplexStreaming();
         await call.RequestStream.WriteAsync(new RequestMessage { Value = 1 });
         await call.RequestStream.CompleteAsync();
@@ -344,7 +351,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task SetStatus(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.SetStatusAsync(new RequestMessage());
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await call);
         Assert.Equal(StatusCode.InvalidArgument, exception.Status.StatusCode);
@@ -355,7 +362,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task Deadline(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(0.1);
         var call = ctx.Client.DelayedUnaryAsync(new RequestMessage(), deadline: deadline);
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await call);
@@ -366,7 +373,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task AlreadyExpiredDeadline(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var deadline = DateTime.UtcNow - TimeSpan.FromSeconds(0.1);
         var call = ctx.Client.SimpleUnaryAsync(new RequestMessage(), deadline: deadline);
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await call);
@@ -378,7 +385,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task HeadersAndTrailers(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var requestHeaders = new Metadata
         {
             { "A1", "1" },
@@ -437,7 +444,7 @@ public class GrpcNamedPipeTests
 #if NET6_0_OR_GREATER
         if (!OperatingSystem.IsWindows()) return;
 #endif
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         ctx.Client.GetCallInfo(new RequestMessage());
         Assert.Equal($"net.pipe://localhost/pid/{Process.GetCurrentProcess().Id}", ctx.Impl.Peer);
     }
@@ -446,7 +453,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public void ConnectionTimeout(ChannelContextFactory factory)
     {
-        var client = factory.CreateClient();
+        var client = factory.CreateClient(_output);
         var exception = Assert.Throws<RpcException>(() => client.SimpleUnary(new RequestMessage { Value = 10 }));
         Assert.Equal(StatusCode.Unavailable, exception.StatusCode);
         Assert.Equal("failed to connect to all addresses", exception.Status.Detail);
@@ -456,7 +463,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task DroppedServerConnection(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var task = ctx.Client.DropConnectionAsync(new RequestMessage());
         ctx.Dispose();
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await task);
@@ -467,7 +474,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task DroppedServerConnectionClientStreaming(ChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var call = ctx.Client.DropConnectionClientStreaming();
         ctx.Dispose();
         await Task.Delay(500);
@@ -482,7 +489,7 @@ public class GrpcNamedPipeTests
     {
         NamedPipeClientStream pipe = null;
         factory.PipeCallback = p => pipe = p;
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var _ = ctx.Client.WaitForCancellationAsync(new RequestMessage());
         await Task.Delay(100);
         pipe.Close();
@@ -494,7 +501,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(NamedPipeClassData))]
     public async Task CancellationRace(NamedPipeChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         var random = new Random();
         for (int i = 0; i < 200; i++)
         {
@@ -518,7 +525,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(NamedPipeClassData))]
     public async Task CallImmediatelyAfterKillingServer(NamedPipeChannelContextFactory factory)
     {
-        using var ctx = factory.Create();
+        using var ctx = factory.Create(_output);
         ctx.Dispose();
         var exception = await Assert.ThrowsAsync<RpcException>(
             async () => await ctx.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 }));
@@ -530,7 +537,7 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task RestartServerAfterCall(ChannelContextFactory factory)
     {
-        using var ctx1 = factory.Create();
+        using var ctx1 = factory.Create(_output);
         var response1 = await ctx1.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 });
         Assert.Equal(10, response1.Value);
 
@@ -538,7 +545,7 @@ public class GrpcNamedPipeTests
         ctx1.Dispose();
         await Task.Delay(500);
 
-        using var ctx2 = factory.Create();
+        using var ctx2 = factory.Create(_output);
         var response2 = await ctx2.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 });
         Assert.Equal(10, response2.Value);
     }
@@ -547,13 +554,13 @@ public class GrpcNamedPipeTests
     [ClassData(typeof(MultiChannelClassData))]
     public async Task RestartServerAfterNoCalls(ChannelContextFactory factory)
     {
-        using var ctx1 = factory.Create();
+        using var ctx1 = factory.Create(_output);
 
         await Task.Delay(500);
         ctx1.Dispose();
         await Task.Delay(500);
 
-        using var ctx2 = factory.Create();
+        using var ctx2 = factory.Create(_output);
         var response2 = await ctx2.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 });
         Assert.Equal(10, response2.Value);
     }
@@ -584,7 +591,7 @@ public class GrpcNamedPipeTests
 
         NamedPipeServerOptions options = new NamedPipeServerOptions { PipeSecurity = security };
 
-        using var ctx = factory.Create(options);
+        using var ctx = factory.Create(options, _output);
         var response = ctx.Client.SimpleUnary(new RequestMessage { Value = 10 });
         Assert.Equal(10, response.Value);
         Assert.True(ctx.Impl.SimplyUnaryCalled);
@@ -605,7 +612,7 @@ public class GrpcNamedPipeTests
 
         NamedPipeServerOptions options = new NamedPipeServerOptions { PipeSecurity = security };
 
-        using var ctx = factory.Create(options);
+        using var ctx = factory.Create(options, _output);
         var exception =
             Assert.Throws<UnauthorizedAccessException>(() => ctx.Client.SimpleUnary(new RequestMessage { Value = 10 }));
     }

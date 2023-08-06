@@ -31,7 +31,7 @@ public class AspNetUdsContextFactory : ChannelContextFactory
 {
     private string _path;
 
-    public override ChannelContext Create()
+    public override ChannelContext Create(ITestOutputHelper output = null)
     {
         _path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var builder = WebApplication.CreateBuilder();
@@ -49,12 +49,12 @@ public class AspNetUdsContextFactory : ChannelContextFactory
         return new ChannelContext
         {
             Impl = new TestServiceImpl(), // TODO: Match instance
-            Client = CreateClient(),
+            Client = CreateClient(output),
             OnDispose = () => app.StopAsync()
         };
     }
 
-    public override TestService.TestServiceClient CreateClient()
+    public override TestService.TestServiceClient CreateClient(ITestOutputHelper output = null)
     {
         var udsEndPoint = new UnixDomainSocketEndPoint(_path);
         var connectionFactory = new UnixDomainSocketsConnectionFactory(udsEndPoint);

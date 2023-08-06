@@ -31,7 +31,7 @@ public class AspNetHttpContextFactory : ChannelContextFactory
 {
     private int _port;
 
-    public override ChannelContext Create()
+    public override ChannelContext Create(ITestOutputHelper output = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddGrpc(opts => opts.MaxReceiveMessageSize = int.MaxValue);
@@ -54,12 +54,12 @@ public class AspNetHttpContextFactory : ChannelContextFactory
         return new ChannelContext
         {
             Impl = new TestServiceImpl(), // TODO: Match instance
-            Client = CreateClient(),
+            Client = CreateClient(output),
             OnDispose = () => app.StopAsync()
         };
     }
 
-    public override TestService.TestServiceClient CreateClient()
+    public override TestService.TestServiceClient CreateClient(ITestOutputHelper output = null)
     {
         var httpHandler = new HttpClientHandler();
         httpHandler.ServerCertificateCustomValidationCallback =

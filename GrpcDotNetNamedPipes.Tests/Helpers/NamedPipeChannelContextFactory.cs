@@ -21,29 +21,30 @@ public class NamedPipeChannelContextFactory : ChannelContextFactory
     private readonly string _pipeName = $"{Guid.NewGuid().ToString().Replace("-", "")}";
     private const int _connectionTimeout = 100;
 
-    public ChannelContext Create(NamedPipeServerOptions options)
+    public ChannelContext Create(NamedPipeServerOptions options, ITestOutputHelper output)
     {
         var impl = new TestServiceImpl();
-        var server = new NamedPipeServer(_pipeName, options);
+        var server = new NamedPipeServer(_pipeName, options, output != null ? output.WriteLine : null);
         TestService.BindService(server.ServiceBinder, impl);
         server.Start();
         return new ChannelContext
         {
             Impl = impl,
-            Client = CreateClient(),
+            Client = CreateClient(output),
             OnDispose = () => server.Kill()
         };
     }
 
-    public override ChannelContext Create()
+    public override ChannelContext Create(ITestOutputHelper output = null)
     {
-        return Create(new NamedPipeServerOptions());
+        return Create(new NamedPipeServerOptions(), output);
     }
 
-    public override TestService.TestServiceClient CreateClient()
+    public override TestService.TestServiceClient CreateClient(ITestOutputHelper output = null)
     {
         var channel = new NamedPipeChannel(".", _pipeName,
-            new NamedPipeChannelOptions { ConnectionTimeout = _connectionTimeout });
+            new NamedPipeChannelOptions { ConnectionTimeout = _connectionTimeout },
+            output != null ? output.WriteLine : null);
         channel.PipeCallback = PipeCallback;
         return new TestService.TestServiceClient(channel);
     }

@@ -19,6 +19,7 @@ namespace GrpcDotNetNamedPipes;
 public class NamedPipeServer : IDisposable
 {
     private readonly ServerStreamPool _pool;
+    private readonly Action<string> _log;
     private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers = new();
 
     public NamedPipeServer(string pipeName)
@@ -27,8 +28,14 @@ public class NamedPipeServer : IDisposable
     }
 
     public NamedPipeServer(string pipeName, NamedPipeServerOptions options)
+        : this(pipeName, options, null)
+    {
+    }
+
+    internal NamedPipeServer(string pipeName, NamedPipeServerOptions options, Action<string> log)
     {
         _pool = new ServerStreamPool(pipeName, options, HandleConnection, InvokeError);
+        _log = log;
         ServiceBinder = new ServiceBinderImpl(this);
     }
 
@@ -58,8 +65,9 @@ public class NamedPipeServer : IDisposable
 
     private async Task HandleConnection(NamedPipeServerStream pipeStream)
     {
-        var ctx = new ServerConnectionContext(pipeStream, _methodHandlers);
-        await Task.Run(new PipeReader(pipeStream, ctx, ctx.Dispose, InvokeError).ReadLoop);
+        var logger = ConnectionLogger.Server(_log);
+        var ctx = new ServerConnectionContext(pipeStream, logger, _methodHandlers);
+        await Task.Run(new PipeReader(pipeStream, ctx, logger, ctx.Dispose, InvokeError).ReadLoop);
     }
 
     private class ServiceBinderImpl : ServiceBinderBase

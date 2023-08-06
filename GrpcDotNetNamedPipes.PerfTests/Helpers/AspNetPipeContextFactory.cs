@@ -30,7 +30,7 @@ public class AspNetPipeContextFactory : ChannelContextFactory
 {
     private string _pipe;
 
-    public override ChannelContext Create()
+    public override ChannelContext Create(ITestOutputHelper output = null)
     {
         _pipe = $"pipe/{Guid.NewGuid()}";
         var builder = WebApplication.CreateBuilder();
@@ -48,12 +48,12 @@ public class AspNetPipeContextFactory : ChannelContextFactory
         return new ChannelContext
         {
             Impl = new TestServiceImpl(), // TODO: Match instance
-            Client = CreateClient(),
+            Client = CreateClient(output),
             OnDispose = () => app.StopAsync()
         };
     }
 
-    public override TestService.TestServiceClient CreateClient()
+    public override TestService.TestServiceClient CreateClient(ITestOutputHelper output = null)
     {
         var connectionFactory = new NamedPipesConnectionFactory(_pipe);
         var socketsHttpHandler = new SocketsHttpHandler

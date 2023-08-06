@@ -18,15 +18,17 @@ namespace GrpcDotNetNamedPipes.Internal;
 
 internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 {
+    private readonly ConnectionLogger _logger;
     private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers;
     private readonly PayloadQueue _payloadQueue;
 
-    public ServerConnectionContext(NamedPipeServerStream pipeStream,
+    public ServerConnectionContext(NamedPipeServerStream pipeStream, ConnectionLogger logger,
         Dictionary<string, Func<ServerConnectionContext, Task>> methodHandlers)
     {
         CallContext = new NamedPipeCallContext(this);
         PipeStream = pipeStream;
-        Transport = new NamedPipeTransport(pipeStream);
+        Transport = new NamedPipeTransport(pipeStream, logger);
+        _logger = logger;
         _methodHandlers = methodHandlers;
         _payloadQueue = new PayloadQueue();
         CancellationTokenSource = new CancellationTokenSource();
@@ -73,6 +75,7 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 
     public void Error(Exception ex)
     {
+        _logger.Log("RPC error");
         IsCompleted = true;
         if (Deadline != null && Deadline.IsExpired)
         {
@@ -94,6 +97,7 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 
     public void Success(byte[] responsePayload = null)
     {
+        _logger.Log("RPC successful");
         IsCompleted = true;
         if (CallContext.Status.StatusCode != StatusCode.OK)
         {
@@ -119,6 +123,7 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 
     public void Dispose()
     {
+        _logger.Log("Disposing server context");
         if (!IsCompleted)
         {
             CancellationTokenSource.Cancel();
