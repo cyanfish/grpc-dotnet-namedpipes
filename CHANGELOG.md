@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.0
+- Improve streaming performance
+- Improve connection reliability in some cases
+- Implement ServerCallContext.Peer ([#37](https://github.com/cyanfish/grpc-dotnet-namedpipes/issues/37))
+- Set cancellation token on client disconnect ([#30](https://github.com/cyanfish/grpc-dotnet-namedpipes/issues/30))
+- The [readme](https://github.com/cyanfish/grpc-dotnet-namedpipes) now has a comparison matrix for ASP.NET gRPC
+
 ## 2.0.0
 - Add macOS and Linux support
 - Change build targets to: net462, net6, netstandard2.0
