@@ -21,9 +21,10 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
     private readonly ConnectionLogger _logger;
     private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers;
     private readonly PayloadQueue _payloadQueue;
-
+    private readonly TaskFactory _taskFactory;
+    
     public ServerConnectionContext(NamedPipeServerStream pipeStream, ConnectionLogger logger,
-        Dictionary<string, Func<ServerConnectionContext, Task>> methodHandlers)
+        Dictionary<string, Func<ServerConnectionContext, Task>> methodHandlers, TaskFactory taskFactory)
     {
         CallContext = new NamedPipeCallContext(this);
         PipeStream = pipeStream;
@@ -32,6 +33,7 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
         _methodHandlers = methodHandlers;
         _payloadQueue = new PayloadQueue();
         CancellationTokenSource = new CancellationTokenSource();
+        _taskFactory = taskFactory;
     }
 
     public NamedPipeServerStream PipeStream { get; }
@@ -58,11 +60,13 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
         return new ResponseStreamWriterImpl<TResponse>(Transport, CancellationToken.None, responseMarshaller,
             () => IsCompleted);
     }
-
+    
     public override void HandleRequestInit(string methodFullName, DateTime? deadline)
     {
         Deadline = new Deadline(deadline);
-        Task.Run(async () => await _methodHandlers[methodFullName](this).ConfigureAwait(false));
+        // Note the use of .ConfigureAwait(false) here...
+        // https://blog.stephencleary.com/2012/07/dont-block-on-async-code.html
+        _taskFactory.StartNew(async () => await _methodHandlers[methodFullName](this).ConfigureAwait(false)); 
     }
 
     public override void HandleHeaders(Metadata headers) => RequestHeaders = headers;

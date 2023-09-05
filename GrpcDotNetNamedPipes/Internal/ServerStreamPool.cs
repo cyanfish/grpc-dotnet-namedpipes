@@ -161,7 +161,8 @@ internal class ServerStreamPool : IDisposable
             try
             {
                 await _handleConnection(pipeServer);
-                pipeServer.Disconnect();
+                if (pipeServer.IsConnected)
+                    pipeServer.Disconnect();
             }
             catch (Exception error)
             {
