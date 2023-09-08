@@ -38,4 +38,10 @@ public class NamedPipeServerOptions
     /// by using TaskCreationOptions.preferFairness
     /// </summary>
     public TaskFactory TaskFactory { get; set; }
+
+    /// <summary>
+    /// Gets or sets a count of threads to use for the listener.
+    /// If you need to address a synchronous code execution issue, try increasing
+    /// </summary>
+    public int ThreadPoolSize { get; set; } = 4;
 }

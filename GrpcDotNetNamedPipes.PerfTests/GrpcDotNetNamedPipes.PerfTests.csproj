@@ -10,8 +10,11 @@
 
     <ItemGroup>
         <PackageReference Include="Grpc.AspNetCore" Version="2.49.0" Condition="'$(TargetFramework)' != 'net462'" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
