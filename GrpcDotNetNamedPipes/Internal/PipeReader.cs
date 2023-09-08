@@ -49,11 +49,11 @@ internal class PipeReader
         }
         catch (EndOfPipeException)
         {
-            _logger.Log("End of pipe");
+            _logger.LogError("End of pipe");
         }
         catch (Exception error)
         {
-            _logger.Log("Pipe read error");
+            _logger.LogError("Pipe read error");
             _onError?.Invoke(error);
         }
         finally

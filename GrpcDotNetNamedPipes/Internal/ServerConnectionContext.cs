@@ -79,22 +79,31 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 
     public void Error(Exception ex)
     {
-        _logger.Log("RPC error");
         IsCompleted = true;
         if (Deadline != null && Deadline.IsExpired)
         {
+            _logger.LogError("RPC Warning: Deadline Exceeded");
             WriteTrailers(StatusCode.DeadlineExceeded, "");
         }
         else if (CancellationTokenSource.IsCancellationRequested)
         {
+            
+            _logger.LogError("RPC Warning: Cancelled");
             WriteTrailers(StatusCode.Cancelled, "");
         }
         else if (ex is RpcException rpcException)
         {
+            
+            _logger.LogError($"RPC Exception: {rpcException.Message} at {rpcException.StackTrace}");
+            if (rpcException.InnerException != null)
+                _logger.LogError($"Inner exception: {rpcException.InnerException.Message} at {rpcException.InnerException.StackTrace}");
             WriteTrailers(rpcException.StatusCode, rpcException.Status.Detail);
         }
         else
         {
+            _logger.LogError($"RPC Exception (unknown): {ex.Message} at {ex.StackTrace}");
+            if (ex.InnerException != null)
+                _logger.LogError($"Inner exception: {ex.InnerException.Message} at {ex.InnerException.StackTrace}");
             WriteTrailers(StatusCode.Unknown, "Exception was thrown by handler.");
         }
     }

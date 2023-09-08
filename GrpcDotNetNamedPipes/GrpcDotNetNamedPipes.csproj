@@ -5,8 +5,8 @@
         <LangVersion>11</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
-        <Version>2.1.0</Version>
-        <PackageVersion>2.1.0</PackageVersion>
+        <Version>2.2.0</Version>
+        <PackageVersion>2.2.0</PackageVersion>
         <AssemblyVersion>2.0.0.0</AssemblyVersion>
 
         <Authors>Ben Olden-Cooligan</Authors>
@@ -25,9 +25,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.21.9" />
-        <PackageReference Include="Grpc.Core.Api" Version="2.49.0" />
-        <PackageReference Include="Grpc.Tools" Version="2.50.0" PrivateAssets="All" />
+        <PackageReference Include="Google.Protobuf" Version="3.24.3" />
+        <PackageReference Include="Grpc.Core.Api" Version="2.57.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.58.0" PrivateAssets="All" />
         <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" Condition="'$(TargetFramework)' == 'net5.0-windows'" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
