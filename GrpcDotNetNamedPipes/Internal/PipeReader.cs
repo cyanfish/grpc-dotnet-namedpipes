@@ -43,7 +43,6 @@ internal class PipeReader
             while (_pipeStream.IsConnected &&
                    await _transport.Read(_messageHandler).ConfigureAwait(false))
             {
-                await _transport.Read(_messageHandler).ConfigureAwait(false);
             }
             _logger.Log("Pipe disconnected");
         }
