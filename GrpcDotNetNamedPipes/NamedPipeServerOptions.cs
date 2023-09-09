@@ -31,4 +31,17 @@ public class NamedPipeServerOptions
     /// </summary>
     public PipeSecurity PipeSecurity { get; set; }
 #endif
+
+    /// <summary>
+    /// Gets or sets a Custom Task Factory to control how tasks are serviced. 
+    /// For example, causing threads to be processsed in FIFO rather than LIFO  
+    /// by using TaskCreationOptions.preferFairness
+    /// </summary>
+    public TaskFactory TaskFactory { get; set; }
+
+    /// <summary>
+    /// Gets or sets a count of threads to use for the listener.
+    /// If you need to address a synchronous code execution issue, try increasing
+    /// </summary>
+    public int ThreadPoolSize { get; set; } = 4;
 }

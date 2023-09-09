@@ -18,7 +18,7 @@ namespace GrpcDotNetNamedPipes.Internal;
 
 internal class ServerStreamPool : IDisposable
 {
-    private const int PoolSize = 4;
+    private readonly int PoolSize = 4;
     private const int FallbackMin = 100;
     private const int FallbackMax = 10_000;
 
@@ -37,6 +37,8 @@ internal class ServerStreamPool : IDisposable
         _options = options;
         _handleConnection = handleConnection;
         _invokeError = invokeError;
+        if (options.ThreadPoolSize > 0)
+            PoolSize = options.ThreadPoolSize;
     }
 
     private NamedPipeServerStream CreatePipeServer()
@@ -161,7 +163,8 @@ internal class ServerStreamPool : IDisposable
             try
             {
                 await _handleConnection(pipeServer);
-                pipeServer.Disconnect();
+                if (pipeServer.IsConnected)
+                    pipeServer.Disconnect();
             }
             catch (Exception error)
             {
