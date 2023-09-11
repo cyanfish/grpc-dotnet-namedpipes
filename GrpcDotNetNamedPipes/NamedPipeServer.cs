@@ -19,7 +19,9 @@ namespace GrpcDotNetNamedPipes;
 public class NamedPipeServer : IDisposable
 {
     private readonly ServerStreamPool _pool;
+    private readonly TaskFactory _taskFactory;
     private readonly Action<string> _log;
+    private readonly Action<string> _errorLog;
     private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers = new();
 
     public NamedPipeServer(string pipeName)
@@ -28,15 +30,17 @@ public class NamedPipeServer : IDisposable
     }
 
     public NamedPipeServer(string pipeName, NamedPipeServerOptions options)
-        : this(pipeName, options, null)
+        : this(pipeName, options, null, null)
     {
     }
 
-    internal NamedPipeServer(string pipeName, NamedPipeServerOptions options, Action<string> log)
+    public NamedPipeServer(string pipeName, NamedPipeServerOptions options, Action<string> log, Action<string> errorLog)
     {
         _pool = new ServerStreamPool(pipeName, options, HandleConnection, InvokeError);
         _log = log;
+        _errorLog = errorLog;
         ServiceBinder = new ServiceBinderImpl(this);
+        _taskFactory = options.TaskFactory ?? new TaskFactory();
     }
 
     public ServiceBinderBase ServiceBinder { get; }
@@ -65,8 +69,8 @@ public class NamedPipeServer : IDisposable
 
     private async Task HandleConnection(NamedPipeServerStream pipeStream)
     {
-        var logger = ConnectionLogger.Server(_log);
-        var ctx = new ServerConnectionContext(pipeStream, logger, _methodHandlers);
+        var logger = ConnectionLogger.Server(_log, _errorLog);
+        var ctx = new ServerConnectionContext(pipeStream, logger, _methodHandlers, _taskFactory);
         await Task.Run(new PipeReader(pipeStream, ctx, logger, ctx.Dispose, InvokeError).ReadLoop);
     }
 

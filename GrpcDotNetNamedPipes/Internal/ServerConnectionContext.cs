@@ -21,9 +21,10 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
     private readonly ConnectionLogger _logger;
     private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers;
     private readonly PayloadQueue _payloadQueue;
-
+    private readonly TaskFactory _taskFactory;
+    
     public ServerConnectionContext(NamedPipeServerStream pipeStream, ConnectionLogger logger,
-        Dictionary<string, Func<ServerConnectionContext, Task>> methodHandlers)
+        Dictionary<string, Func<ServerConnectionContext, Task>> methodHandlers, TaskFactory taskFactory)
     {
         CallContext = new NamedPipeCallContext(this);
         PipeStream = pipeStream;
@@ -32,6 +33,7 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
         _methodHandlers = methodHandlers;
         _payloadQueue = new PayloadQueue();
         CancellationTokenSource = new CancellationTokenSource();
+        _taskFactory = taskFactory;
     }
 
     public NamedPipeServerStream PipeStream { get; }
@@ -58,11 +60,13 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
         return new ResponseStreamWriterImpl<TResponse>(Transport, CancellationToken.None, responseMarshaller,
             () => IsCompleted);
     }
-
+    
     public override void HandleRequestInit(string methodFullName, DateTime? deadline)
     {
         Deadline = new Deadline(deadline);
-        Task.Run(async () => await _methodHandlers[methodFullName](this).ConfigureAwait(false));
+        // Note the use of .ConfigureAwait(false) here...
+        // https://blog.stephencleary.com/2012/07/dont-block-on-async-code.html
+        _taskFactory.StartNew(async () => await _methodHandlers[methodFullName](this).ConfigureAwait(false)); 
     }
 
     public override void HandleHeaders(Metadata headers) => RequestHeaders = headers;
@@ -75,22 +79,31 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 
     public void Error(Exception ex)
     {
-        _logger.Log("RPC error");
         IsCompleted = true;
         if (Deadline != null && Deadline.IsExpired)
         {
+            _logger.LogError("RPC Warning: Deadline Exceeded");
             WriteTrailers(StatusCode.DeadlineExceeded, "");
         }
         else if (CancellationTokenSource.IsCancellationRequested)
         {
+            
+            _logger.LogError("RPC Warning: Cancelled");
             WriteTrailers(StatusCode.Cancelled, "");
         }
         else if (ex is RpcException rpcException)
         {
+            
+            _logger.LogError($"RPC Exception: {rpcException.Message} at {rpcException.StackTrace}");
+            if (rpcException.InnerException != null)
+                _logger.LogError($"Inner exception: {rpcException.InnerException.Message} at {rpcException.InnerException.StackTrace}");
             WriteTrailers(rpcException.StatusCode, rpcException.Status.Detail);
         }
         else
         {
+            _logger.LogError($"RPC Exception (unknown): {ex.Message} at {ex.StackTrace}");
+            if (ex.InnerException != null)
+                _logger.LogError($"Inner exception: {ex.InnerException.Message} at {ex.InnerException.StackTrace}");
             WriteTrailers(StatusCode.Unknown, "Exception was thrown by handler.");
         }
     }

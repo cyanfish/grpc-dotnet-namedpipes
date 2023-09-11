@@ -21,15 +21,17 @@ internal class ConnectionLogger
     private static int _lastId;
 
     private static int NextId() => Interlocked.Increment(ref _lastId);
-    public static ConnectionLogger Client(Action<string> log) => new(log, "CLIENT", log != null ? NextId() : 0);
-    public static ConnectionLogger Server(Action<string> log) => new(log, "SERVER", 0);
+    public static ConnectionLogger Client(Action<string> traceLog, Action<string> errorLog) => new(traceLog, errorLog, "CLIENT", traceLog != null ? NextId() : 0);
+    public static ConnectionLogger Server(Action<string> traceLog, Action<string> errorLog) => new(traceLog, errorLog, "SERVER", 0);
 
-    private readonly Action<string> _log;
+    private readonly Action<string> _traceLog;
+    private readonly Action<string> _errorLog;
     private readonly string _type;
 
-    private ConnectionLogger(Action<string> log, string type, int id)
+    private ConnectionLogger(Action<string> traceLog, Action<string> errorLog, string type, int id)
     {
-        _log = log;
+        _traceLog = traceLog;
+        _errorLog = errorLog;
         _type = type;
         ConnectionId = id;
     }
@@ -38,8 +40,15 @@ internal class ConnectionLogger
 
     public void Log(string message)
     {
-        if (_log == null) return;
+        if (_traceLog == null) return;
         var id = ConnectionId > 0 ? ConnectionId.ToString() : "?";
-        _log($"[{_type}][{id}] {message}");
+        _traceLog($"[{_type}][{id}] {message}");
+    }
+   
+    public void LogError(string message)
+    {
+        if(_errorLog == null) return;
+        var id = ConnectionId > 0 ? ConnectionId.ToString() : "?";
+        _errorLog($"[{_type}][{id}] {message}");
     }
 }
