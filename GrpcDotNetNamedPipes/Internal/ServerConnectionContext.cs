@@ -87,6 +87,7 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
         }
         else if (ex is RpcException rpcException)
         {
+            ExtendResponseTrailers(rpcException.Trailers);
             WriteTrailers(rpcException.StatusCode, rpcException.Status.Detail);
         }
         else
@@ -119,6 +120,15 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
     private void WriteTrailers(StatusCode statusCode, string statusDetail)
     {
         Transport.Write().Trailers(statusCode, statusDetail, CallContext.ResponseTrailers).Commit();
+    }
+
+    private void ExtendResponseTrailers(Metadata trailers)
+    {
+        if (trailers == null)
+            return;
+
+        foreach (var entry in trailers)
+            CallContext.ResponseTrailers.Add(entry);
     }
 
     public void Dispose()

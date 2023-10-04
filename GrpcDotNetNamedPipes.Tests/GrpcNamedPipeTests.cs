@@ -102,6 +102,18 @@ public class GrpcNamedPipeTests
         Assert.Equal("Exception was thrown by handler.", exception.Status.Detail);
     }
 
+    [Theory]
+    [ClassData(typeof(MultiChannelClassData))]
+    public async Task ThrowingUnaryWithTrailers(ChannelContextFactory factory)
+    {
+        using var ctx = factory.Create();
+        var responseTask = ctx.Client.ThrowingUnaryWithTrailersAsync(new RequestMessage { Value = 10 });
+        var exception = await Assert.ThrowsAsync<RpcException>(async () => await responseTask);
+        Assert.Equal(StatusCode.Unknown, exception.StatusCode);
+        Assert.Equal("test value", exception.Trailers.Get("test-key").Value);
+        Assert.Equal("Exception was thrown by handler.", exception.Status.Detail);
+    }
+
     [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ThrowCanceledExceptionUnary(ChannelContextFactory factory)
@@ -119,11 +131,13 @@ public class GrpcNamedPipeTests
     public async Task ThrowRpcExceptionUnary(ChannelContextFactory factory)
     {
         using var ctx = factory.Create(_output);
-        ctx.Impl.ExceptionToThrow = new RpcException(new Status(StatusCode.InvalidArgument, "Bad arg"));
+        var trailers = new Metadata { { "test-key", "test value" } };
+        ctx.Impl.ExceptionToThrow = new RpcException(new Status(StatusCode.InvalidArgument, "Bad arg"), trailers);
         var responseTask = ctx.Client.ThrowingUnaryAsync(new RequestMessage { Value = 10 });
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await responseTask);
         Assert.Equal(StatusCode.InvalidArgument, exception.StatusCode);
         Assert.Equal("Bad arg", exception.Status.Detail);
+        Assert.Equal("test value", exception.Trailers.Get("test-key").Value);
     }
 
     [Theory(Timeout = Timeout)]
