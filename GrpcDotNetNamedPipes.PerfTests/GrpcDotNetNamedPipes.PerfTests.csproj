@@ -9,9 +9,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.AspNetCore" Version="2.49.0" Condition="'$(TargetFramework)' != 'net462'" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.59.0" Condition="'$(TargetFramework)' != 'net462'" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.4" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
