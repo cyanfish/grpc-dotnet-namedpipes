@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.1
+- Improve connection reliability in some cases
+- Update dependency versions
+
 ## 2.1.0
 - Improve streaming performance
 - Improve connection reliability in some cases
