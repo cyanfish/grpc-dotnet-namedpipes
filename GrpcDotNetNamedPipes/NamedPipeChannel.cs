@@ -59,37 +59,33 @@ public class NamedPipeChannel : CallInvoker
             pipeOptions, _options.ImpersonationLevel, HandleInheritability.None);
         PipeCallback?.Invoke(stream);
 
-        try
+        bool isServerUnary = method.Type == MethodType.Unary || method.Type == MethodType.ClientStreaming;
+        var logger = ConnectionLogger.Client(_log);
+        var ctx = new ClientConnectionContext(stream, callOptions, isServerUnary, _options.ConnectionTimeout,
+            logger);
+        ctx.InitCall(method, request);
+        Task.Run(async () =>
         {
-            bool isServerUnary = method.Type == MethodType.Unary || method.Type == MethodType.ClientStreaming;
-            var logger = ConnectionLogger.Client(_log);
-            var ctx = new ClientConnectionContext(stream, callOptions, isServerUnary, _options.ConnectionTimeout,
-                logger);
-            ctx.InitCall(method, request);
-            Task.Run(new PipeReader(stream, ctx, logger, ctx.Dispose).ReadLoop);
-            return ctx;
-        }
-        catch (Exception ex)
-        {
-            stream.Dispose();
-
-            if (ex is TimeoutException || ex is IOException)
-            {
-                throw new RpcException(new Status(StatusCode.Unavailable, "failed to connect to all addresses"));
-            }
-            else
-            {
-                throw;
-            }
-        }
+            await ctx.InitTask.ConfigureAwait(false);
+            await new PipeReader(stream, ctx, logger, ctx.Dispose).ReadLoop().ConfigureAwait(false);
+        });
+        return ctx;
     }
 
     public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method,
         string host, CallOptions callOptions, TRequest request)
     {
-        var ctx = CreateConnectionContext(method, callOptions, request);
-        return ctx.GetMessageReader(method.ResponseMarshaller).ReadNextMessage(callOptions.CancellationToken)
-            .Result;
+        try
+        {
+            var ctx = CreateConnectionContext(method, callOptions, request);
+            return ctx.GetMessageReader(method.ResponseMarshaller).ReadNextMessage(callOptions.CancellationToken)
+                .Result;
+        }
+        catch (AggregateException ex)
+        {
+            // Calling .Result will wrap the original exception inside an AggregateException
+            throw ex.InnerException!;
+        }
     }
 
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(

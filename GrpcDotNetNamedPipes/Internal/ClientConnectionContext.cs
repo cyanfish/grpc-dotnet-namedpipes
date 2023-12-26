@@ -28,7 +28,6 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
 
     private readonly TaskCompletionSource<Metadata> _responseHeadersTcs =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
-
     private CancellationTokenRegistration _cancelReg;
     private byte[] _pendingPayload;
     private Metadata _responseTrailers;
@@ -47,6 +46,8 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
         _logger = logger;
     }
 
+    public Task InitTask { get; private set; }
+
     public NamedPipeTransport Transport { get; }
 
     public Task<Metadata> ResponseHeadersAsync => _responseHeadersTcs.Task;
@@ -55,30 +56,50 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
     {
         if (_callOptions.CancellationToken.IsCancellationRequested || _deadline.IsExpired)
         {
+            InitTask = Task.CompletedTask;
             return;
         }
 
-        _pipeStream.Connect(_connectionTimeout);
-        _pipeStream.ReadMode = PlatformConfig.TransmissionMode;
+        InitTask = Task.Run(async () =>
+        {
+            try
+            {
+                await _pipeStream.ConnectAsync(_connectionTimeout).ConfigureAwait(false);
+                _pipeStream.ReadMode = PlatformConfig.TransmissionMode;
 
-        if (request != null)
-        {
-            var payload = SerializationHelpers.Serialize(method.RequestMarshaller, request);
-            Transport.Write()
-                .RequestInit(method.FullName, _callOptions.Deadline)
-                .Headers(_callOptions.Headers)
-                .Payload(payload)
-                .Commit();
-            _cancelReg = _callOptions.CancellationToken.Register(DisposeCall);
-        }
-        else
-        {
-            Transport.Write()
-                .RequestInit(method.FullName, _callOptions.Deadline)
-                .Headers(_callOptions.Headers)
-                .Commit();
-            _cancelReg = _callOptions.CancellationToken.Register(DisposeCall);
-        }
+                if (request != null)
+                {
+                    var payload = SerializationHelpers.Serialize(method.RequestMarshaller, request);
+                    Transport.Write()
+                        .RequestInit(method.FullName, _callOptions.Deadline)
+                        .Headers(_callOptions.Headers)
+                        .Payload(payload)
+                        .Commit();
+                    _cancelReg = _callOptions.CancellationToken.Register(DisposeCall);
+                }
+                else
+                {
+                    Transport.Write()
+                        .RequestInit(method.FullName, _callOptions.Deadline)
+                        .Headers(_callOptions.Headers)
+                        .Commit();
+                    _cancelReg = _callOptions.CancellationToken.Register(DisposeCall);
+                }
+            }
+            catch (Exception ex)
+            {
+                _pipeStream.Dispose();
+
+                if (ex is TimeoutException || ex is IOException)
+                {
+                    _payloadQueue.SetError(new RpcException(new Status(StatusCode.Unavailable, "failed to connect to all addresses")));
+                }
+                else
+                {
+                    _payloadQueue.SetError(ex);
+                }
+            }
+        });
     }
 
     public override void HandleHeaders(Metadata headers)
@@ -142,19 +163,23 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
 
     public IClientStreamWriter<TRequest> CreateRequestStream<TRequest>(Marshaller<TRequest> requestMarshaller)
     {
-        return new RequestStreamWriterImpl<TRequest>(Transport, _callOptions.CancellationToken, requestMarshaller);
+        return new RequestStreamWriterImpl<TRequest>(Transport, _callOptions.CancellationToken, requestMarshaller,
+            InitTask);
     }
 
     public void DisposeCall()
     {
-        try
+        InitTask.ContinueWith(_ =>
         {
-            Transport.Write().Cancel().Commit();
-        }
-        catch (Exception)
-        {
-            // Assume the connection is already terminated
-        }
+            try
+            {
+                Transport.Write().Cancel().Commit();
+            }
+            catch (Exception)
+            {
+                // Assume the connection is already terminated
+            }
+        }, TaskContinuationOptions.OnlyOnRanToCompletion);
     }
 
     public void Dispose()

@@ -18,12 +18,15 @@ namespace GrpcDotNetNamedPipes.Internal;
 
 internal class RequestStreamWriterImpl<T> : StreamWriterImpl<T>, IClientStreamWriter<T>
 {
+    private readonly Task _initTask;
+    private bool _isInitialized;
     private bool _isCompleted;
 
     public RequestStreamWriterImpl(NamedPipeTransport stream, CancellationToken cancellationToken,
-        Marshaller<T> marshaller)
+        Marshaller<T> marshaller, Task initTask)
         : base(stream, cancellationToken, marshaller)
     {
+        _initTask = initTask;
     }
 
     public override Task WriteAsync(T message)
@@ -32,17 +35,31 @@ internal class RequestStreamWriterImpl<T> : StreamWriterImpl<T>, IClientStreamWr
         {
             throw new InvalidOperationException($"Request stream has already been completed.");
         }
-        return base.WriteAsync(message);
+        return WriteAsyncCore(message);
     }
 
-    public Task CompleteAsync()
+    private async Task WriteAsyncCore(T message)
     {
+        if (!_isInitialized)
+        {
+            await _initTask.ConfigureAwait(false);
+            _isInitialized = true;
+        }
+        await base.WriteAsync(message).ConfigureAwait(false);
+    }
+
+    public async Task CompleteAsync()
+    {
+        if (!_isInitialized)
+        {
+            await _initTask.ConfigureAwait(false);
+            _isInitialized = true;
+        }
         if (CancelToken.IsCancellationRequested)
         {
-            return Task.FromCanceled(CancelToken);
+            throw new TaskCanceledException();
         }
         Stream.Write().RequestStreamEnd().Commit();
         _isCompleted = true;
-        return Task.CompletedTask;
     }
 }
