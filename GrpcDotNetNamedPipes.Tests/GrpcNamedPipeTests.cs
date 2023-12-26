@@ -139,6 +139,20 @@ public class GrpcNamedPipeTests
         Assert.Equal(StatusCode.Cancelled, exception.StatusCode);
     }
 
+
+    [Theory(Timeout = Timeout)]
+    [ClassData(typeof(NamedPipeClassData))]
+    public async Task UnaryParallelStress(NamedPipeChannelContextFactory factory)
+    {
+        using var ctx = factory.Create(_output);
+        var tasks = new List<Task>();
+        for (var i = 0; i < 100; i++)
+        {
+            tasks.Add(Task.Run(() => ctx.Client.SimpleUnaryAsync(new RequestMessage { Value = 10 }).ResponseAsync));
+        }
+        await Task.WhenAll(tasks);
+    }
+
     [Theory(Timeout = Timeout)]
     [ClassData(typeof(MultiChannelClassData))]
     public async Task ClientStreaming(ChannelContextFactory factory)
