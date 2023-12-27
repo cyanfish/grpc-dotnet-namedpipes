@@ -109,29 +109,30 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
         // In theory .Connect is supposed to have a timeout and not need retries, but it turns
         // out that in practice sometimes it does.
         var elapsed = Stopwatch.StartNew();
+        int TimeLeft() => Math.Max(_connectionTimeout - (int) elapsed.ElapsedMilliseconds, 0);
         var fallback = 100;
         while (true)
         {
             try
             {
                 await _connectLock.Take();
-                var waitTime = _connectionTimeout == -1
-                    ? -1
-                    : Math.Min(1000, Math.Max(_connectionTimeout - (int) elapsed.ElapsedMilliseconds, 0));
+                var waitTime = _connectionTimeout == -1 ? 1000 : Math.Min(1000, TimeLeft());
                 await _pipeStream.ConnectAsync(waitTime).ConfigureAwait(false);
                 _connectLock.Release();
                 break;
             }
-            catch (Exception ex) when (ex is TimeoutException or IOException)
+            catch (Exception ex)
             {
                 _connectLock.Release();
-                if (_connectionTimeout != -1 && elapsed.ElapsedMilliseconds > _connectionTimeout)
+                if (ex is not (TimeoutException or IOException))
                 {
                     throw;
                 }
-                var delayTime = _connectionTimeout == -1
-                    ? fallback
-                    : Math.Min(fallback, Math.Max(_connectionTimeout - (int) elapsed.ElapsedMilliseconds, 0));
+                if (_connectionTimeout != -1 && TimeLeft() == 0)
+                {
+                    throw;
+                }
+                var delayTime = _connectionTimeout == -1 ? fallback : Math.Min(fallback, TimeLeft());
                 await Task.Delay(delayTime);
                 fallback = Math.Min(fallback * 2, 1000);
             }
