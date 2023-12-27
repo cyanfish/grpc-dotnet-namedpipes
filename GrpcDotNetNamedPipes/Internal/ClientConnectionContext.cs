@@ -64,7 +64,7 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
         {
             try
             {
-                await _pipeStream.ConnectAsync(_connectionTimeout).ConfigureAwait(false);
+                await ConnectPipeWithRetries();
                 _pipeStream.ReadMode = PlatformConfig.TransmissionMode;
 
                 if (request != null)
@@ -100,6 +100,37 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
                 }
             }
         });
+    }
+
+    private async Task ConnectPipeWithRetries()
+    {
+        // In theory .Connect is supposed to have a timeout and not need retries, but it turns
+        // out that in practice sometimes it does.
+        var elapsed = Stopwatch.StartNew();
+        var fallback = 100;
+        while (true)
+        {
+            var waitTime = _connectionTimeout == -1
+                ? -1
+                : Math.Min(1000, Math.Max(_connectionTimeout - (int) elapsed.ElapsedMilliseconds, 0));
+            try
+            {
+                await _pipeStream.ConnectAsync(waitTime).ConfigureAwait(false);
+                break;
+            }
+            catch (Exception ex) when (ex is TimeoutException or IOException)
+            {
+                if (_connectionTimeout != -1 && elapsed.ElapsedMilliseconds > _connectionTimeout)
+                {
+                    throw;
+                }
+                var delayTime = _connectionTimeout == -1
+                    ? fallback
+                    : Math.Min(fallback, Math.Max(_connectionTimeout - (int) elapsed.ElapsedMilliseconds, 0));
+                await Task.Delay(delayTime);
+                fallback = Math.Min(fallback * 2, 1000);
+            }
+        }
     }
 
     public override void HandleHeaders(Metadata headers)
