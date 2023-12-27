@@ -22,6 +22,7 @@ public class NamedPipeChannel : CallInvoker
     private readonly string _pipeName;
     private readonly NamedPipeChannelOptions _options;
     private readonly Action<string> _log;
+    private readonly SimpleAsyncLock _connectLock = new();
 
     public NamedPipeChannel(string serverName, string pipeName)
         : this(serverName, pipeName, new NamedPipeChannelOptions())
@@ -62,7 +63,7 @@ public class NamedPipeChannel : CallInvoker
         bool isServerUnary = method.Type == MethodType.Unary || method.Type == MethodType.ClientStreaming;
         var logger = ConnectionLogger.Client(_log);
         var ctx = new ClientConnectionContext(stream, callOptions, isServerUnary, _options.ConnectionTimeout,
-            logger);
+            _connectLock, logger);
         ctx.InitCall(method, request);
         Task.Run(async () =>
         {

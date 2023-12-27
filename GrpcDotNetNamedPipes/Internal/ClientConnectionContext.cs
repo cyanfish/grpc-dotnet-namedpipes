@@ -24,6 +24,7 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
     private readonly PayloadQueue _payloadQueue;
     private readonly Deadline _deadline;
     private readonly int _connectionTimeout;
+    private readonly SimpleAsyncLock _connectLock;
     private readonly ConnectionLogger _logger;
 
     private readonly TaskCompletionSource<Metadata> _responseHeadersTcs =
@@ -34,7 +35,7 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
     private Status _status;
 
     public ClientConnectionContext(NamedPipeClientStream pipeStream, CallOptions callOptions, bool isServerUnary,
-        int connectionTimeout, ConnectionLogger logger)
+        int connectionTimeout, SimpleAsyncLock connectLock, ConnectionLogger logger)
     {
         _pipeStream = pipeStream;
         _callOptions = callOptions;
@@ -43,6 +44,7 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
         _payloadQueue = new PayloadQueue();
         _deadline = new Deadline(callOptions.Deadline);
         _connectionTimeout = connectionTimeout;
+        _connectLock = connectLock;
         _logger = logger;
     }
 
@@ -110,16 +112,19 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
         var fallback = 100;
         while (true)
         {
-            var waitTime = _connectionTimeout == -1
-                ? -1
-                : Math.Min(1000, Math.Max(_connectionTimeout - (int) elapsed.ElapsedMilliseconds, 0));
             try
             {
+                await _connectLock.Take();
+                var waitTime = _connectionTimeout == -1
+                    ? -1
+                    : Math.Min(1000, Math.Max(_connectionTimeout - (int) elapsed.ElapsedMilliseconds, 0));
                 await _pipeStream.ConnectAsync(waitTime).ConfigureAwait(false);
+                _connectLock.Release();
                 break;
             }
             catch (Exception ex) when (ex is TimeoutException or IOException)
             {
+                _connectLock.Release();
                 if (_connectionTimeout != -1 && elapsed.ElapsedMilliseconds > _connectionTimeout)
                 {
                     throw;
