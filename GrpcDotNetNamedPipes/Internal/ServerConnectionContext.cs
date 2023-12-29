@@ -21,6 +21,7 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
     private readonly ConnectionLogger _logger;
     private readonly Dictionary<string, Func<ServerConnectionContext, Task>> _methodHandlers;
     private readonly PayloadQueue _payloadQueue;
+    private readonly CancellationTokenSource _requestInitTimeoutCts = new();
 
     public ServerConnectionContext(NamedPipeServerStream pipeStream, ConnectionLogger logger,
         Dictionary<string, Func<ServerConnectionContext, Task>> methodHandlers)
@@ -32,6 +33,12 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
         _methodHandlers = methodHandlers;
         _payloadQueue = new PayloadQueue();
         CancellationTokenSource = new CancellationTokenSource();
+
+        // We're supposed to receive a RequestInit message immediately after the pipe connects. 10s is chosen as a very
+        // conservative timeout. If this expires without receiving RequestInit, we can assume the client is not using
+        // the right protocol and we should terminate the connection rather than potentially leave it open forever.
+        Task.Delay(10_000, _requestInitTimeoutCts.Token)
+            .ContinueWith(_ => RequestInitTimeout(), TaskContinuationOptions.OnlyOnRanToCompletion);
     }
 
     public NamedPipeServerStream PipeStream { get; }
@@ -61,8 +68,36 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 
     public override void HandleRequestInit(string methodFullName, DateTime? deadline)
     {
+        _requestInitTimeoutCts.Cancel();
+        if (!_methodHandlers.ContainsKey(methodFullName))
+        {
+            _logger.Log("Unsupported method");
+            try
+            {
+                WriteTrailers(StatusCode.Unimplemented, "");
+                PipeStream.Disconnect();
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+            return;
+        }
         Deadline = new Deadline(deadline);
         Task.Run(async () => await _methodHandlers[methodFullName](this).ConfigureAwait(false));
+    }
+
+    private void RequestInitTimeout()
+    {
+        _logger.Log("Timed out waiting for RequestInit");
+        try
+        {
+            PipeStream.Disconnect();
+        }
+        catch (Exception)
+        {
+            // Ignore
+        }
     }
 
     public override void HandleHeaders(Metadata headers) => RequestHeaders = headers;
