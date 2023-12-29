@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.0
+- Potential breaking changes:
+  - Async calls are now fully async (they used to block until the pipe was connected)
+  - Using a single NamedPipeChannel object is now recommended for parallel calls
+- Fix an issue where heavily multi-threaded calls can stall on Windows
+- Use custom retry logic for pipe connections for more reliable connections
+- Fix a small memory leak
+- Fix trailers not being included in responses with errors
+- Fix invalid connections staying open forever
+
 ## 2.1.1
 - Improve connection reliability in some cases
 - Update dependency versions
