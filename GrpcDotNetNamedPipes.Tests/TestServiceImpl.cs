@@ -42,6 +42,7 @@ public class TestServiceImpl : TestService.TestServiceBase
 
     public override Task<ResponseMessage> ThrowingUnary(RequestMessage request, ServerCallContext context)
     {
+        context.ResponseTrailers.Add("test_key", "test_value");
         throw ExceptionToThrow;
     }
 

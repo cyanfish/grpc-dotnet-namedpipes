@@ -100,6 +100,7 @@ public class GrpcNamedPipeTests
         var exception = await Assert.ThrowsAsync<RpcException>(async () => await responseTask);
         Assert.Equal(StatusCode.Unknown, exception.StatusCode);
         Assert.Equal("Exception was thrown by handler.", exception.Status.Detail);
+        Assert.Equal("test_value", exception.Trailers.Get("test_key")?.Value);
     }
 
     [Theory(Timeout = Timeout)]

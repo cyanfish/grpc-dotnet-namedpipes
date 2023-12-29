@@ -161,7 +161,7 @@ internal class ClientConnectionContext : TransportMessageHandler, IDisposable
         }
         else
         {
-            _payloadQueue.SetError(new RpcException(status));
+            _payloadQueue.SetError(new RpcException(status, _responseTrailers));
         }
     }
 
