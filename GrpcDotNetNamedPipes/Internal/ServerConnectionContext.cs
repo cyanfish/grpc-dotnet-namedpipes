@@ -153,6 +153,8 @@ internal class ServerConnectionContext : TransportMessageHandler, IDisposable
 
     private void WriteTrailers(StatusCode statusCode, string statusDetail)
     {
+        if (!PipeStream.IsConnected) return;
+
         Transport.Write().Trailers(statusCode, statusDetail, CallContext.ResponseTrailers).Commit();
     }
 
