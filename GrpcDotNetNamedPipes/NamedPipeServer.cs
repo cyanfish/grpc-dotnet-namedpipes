@@ -67,7 +67,7 @@ public class NamedPipeServer : IDisposable
     {
         var logger = ConnectionLogger.Server(_log);
         var ctx = new ServerConnectionContext(pipeStream, logger, _methodHandlers);
-        await Task.Run(async ()=> await new PipeReader(pipeStream, ctx, logger, ctx.Dispose, InvokeError).ReadLoop());
+        await Task.Run(new PipeReader(pipeStream, ctx, logger, ctx.Dispose, InvokeError).ReadLoop);
     }
 
     private class ServiceBinderImpl : ServiceBinderBase
