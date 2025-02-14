@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net462;netstandard2.0;net6;net8</TargetFrameworks>
-        <LangVersion>11</LangVersion>
+        <LangVersion>13</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
         <Version>3.0.0</Version>
