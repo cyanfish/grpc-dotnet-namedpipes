@@ -13,7 +13,6 @@
         <PackageReference Include="Grpc.Core.Api" Version="2.67.0" />
         <PackageReference Include="Grpc.Tools" Version="2.69.0" PrivateAssets="All" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-        <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
         <PackageReference Include="xunit" Version="2.6.2" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
     </ItemGroup>
