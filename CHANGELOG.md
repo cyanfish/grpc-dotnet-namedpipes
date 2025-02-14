@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.0
+- Add NET 8 targets
+- Fix an extraneous error when the pipe is closed ([#65](https://github.com/cyanfish/grpc-dotnet-namedpipes/pull/65))
+- Update dependency versions
+
 ## 3.0.0
 - Potential breaking changes:
   - Async calls are now fully async (they used to block until the pipe was connected)
